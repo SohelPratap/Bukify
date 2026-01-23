@@ -1,0 +1,2 @@
+E:/Shrawan/Apps/Bukify/android/app/.cxx/Debug/1x156e4t/armeabi-v7a/CMakeFiles/edit_cache.dir
+E:/Shrawan/Apps/Bukify/android/app/.cxx/Debug/1x156e4t/armeabi-v7a/CMakeFiles/rebuild_cache.dir
