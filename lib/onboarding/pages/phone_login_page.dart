@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../onboarding/pages/splash_page.dart';
 import '../../home/customer_home.dart';
-import '../../home/worker_home.dart'; // <-- Import your worker home page
+import '../../home/worker_home.dart';
+import '../../onboarding/pages/role_select_page.dart'; // ✅ ADD THIS
 
 class PhoneLoginPage extends StatefulWidget {
   const PhoneLoginPage({super.key});
@@ -69,18 +70,22 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
   void _goToCustomerHome() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => const HomeCustomerPage(),
-      ),
+      MaterialPageRoute(builder: (_) => const HomeCustomerPage()),
     );
   }
 
   void _goToWorkerHome() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => const HomeWorkerPage(),
-      ),
+      MaterialPageRoute(builder: (_) => const HomeWorkerPage()),
+    );
+  }
+
+  // ✅ NEW: Go to Role Select Page
+  void _goToRoleSelect() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const RoleSelectPage()),
     );
   }
 
@@ -196,7 +201,10 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                           decoration: InputDecoration(
                             labelText: "Phone Number",
                             prefixIcon: const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 16,
+                              ),
                               child: Text(
                                 "+91",
                                 style: TextStyle(
@@ -242,7 +250,6 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
 
                         const SizedBox(height: 20),
 
-                        // RESEND OTP
                         if (_otpSent)
                           Center(
                             child: TextButton.icon(
@@ -254,7 +261,7 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
 
                         const SizedBox(height: 30),
 
-                        // ✅ NEXT BUTTON (Customer Home)
+                        // CUSTOMER HOME
                         SizedBox(
                           height: 56,
                           child: ElevatedButton(
@@ -278,7 +285,7 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
 
                         const SizedBox(height: 16),
 
-                        // 🌟 WORKER HOME BUTTON
+                        // WORKER HOME
                         SizedBox(
                           height: 56,
                           child: ElevatedButton(
@@ -295,6 +302,30 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // ✅ ROLE SELECT BUTTON (NEW)
+                        SizedBox(
+                          height: 56,
+                          child: OutlinedButton(
+                            onPressed: _goToRoleSelect,
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFF8B5CF6)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                            ),
+                            child: const Text(
+                              "Change Role",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF8B5CF6),
                               ),
                             ),
                           ),
