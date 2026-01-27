@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../onboarding/pages/splash_page.dart';
-import '../../home/customer_home.dart';
-import '../../home/worker_home.dart';
 import '../../onboarding/pages/role_select_page.dart'; // ✅ ADD THIS
 
 class PhoneLoginPage extends StatefulWidget {
@@ -13,11 +12,22 @@ class PhoneLoginPage extends StatefulWidget {
 
 class _PhoneLoginPageState extends State<PhoneLoginPage> {
   final TextEditingController _phoneController = TextEditingController();
+  final List<TextEditingController> _otpControllers =
+  List.generate(6, (index) => TextEditingController());
+  final List<FocusNode> _otpFocusNodes =
+  List.generate(6, (index) => FocusNode());
+
   bool _otpSent = false;
 
   @override
   void dispose() {
     _phoneController.dispose();
+    for (var controller in _otpControllers) {
+      controller.dispose();
+    }
+    for (var node in _otpFocusNodes) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -55,6 +65,10 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
   }
 
   void _resendOtp() {
+    for (var controller in _otpControllers) {
+      controller.clear();
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text("OTP resent"),
@@ -67,26 +81,44 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
     );
   }
 
-  void _goToCustomerHome() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomeCustomerPage()),
-    );
-  }
+  void _verifyOtp() {
+    String otp = _otpControllers.map((c) => c.text).join();
 
-  void _goToWorkerHome() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomeWorkerPage()),
-    );
-  }
+    if (otp.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Please enter complete OTP"),
+          backgroundColor: Colors.red[400],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
 
-  // ✅ NEW: Go to Role Select Page
-  void _goToRoleSelect() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const RoleSelectPage()),
+    // ✅ OTP VERIFIED
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text("OTP verified successfully!"),
+        backgroundColor: Colors.green[400],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
     );
+
+    // ✅ NAVIGATE TO ROLE SELECTION PAGE
+    Future.delayed(const Duration(milliseconds: 500), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const RoleSelectPage(),
+        ),
+      );
+    });
   }
 
   @override
@@ -170,7 +202,6 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
 
                         const SizedBox(height: 30),
 
-                        // TITLE
                         const Text(
                           "Phone Verification",
                           textAlign: TextAlign.center,
@@ -183,7 +214,9 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                         const SizedBox(height: 12),
 
                         Text(
-                          "We'll send you a one-time password\nto verify your number",
+                          _otpSent
+                              ? "Enter the 6-digit code sent to\n+91 ${_phoneController.text}"
+                              : "We'll send you a one-time password\nto verify your number",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 15,
@@ -193,53 +226,93 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
 
                         const SizedBox(height: 40),
 
-                        // PHONE INPUT
-                        TextField(
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          maxLength: 10,
-                          decoration: InputDecoration(
-                            labelText: "Phone Number",
-                            prefixIcon: const Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 16,
+                        if (!_otpSent)
+                          TextField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            maxLength: 10,
+                            decoration: InputDecoration(
+                              labelText: "Phone Number",
+                              prefixIcon: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 16,
+                                ),
+                                child: Text(
+                                  "+91",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF8B5CF6),
+                                  ),
+                                ),
                               ),
-                              child: Text(
-                                "+91",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF8B5CF6),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide.none,
+                              ),
+                              counterText: "",
+                            ),
+                          ),
+
+                        if (_otpSent)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: List.generate(
+                              6,
+                                  (index) => SizedBox(
+                                width: 50,
+                                height: 60,
+                                child: TextField(
+                                  controller: _otpControllers[index],
+                                  focusNode: _otpFocusNodes[index],
+                                  textAlign: TextAlign.center,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 1,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  decoration: InputDecoration(
+                                    counterText: "",
+                                    filled: true,
+                                    fillColor: Colors.grey[50],
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  onChanged: (value) {
+                                    if (value.isNotEmpty && index < 5) {
+                                      _otpFocusNodes[index + 1].requestFocus();
+                                    } else if (value.isEmpty && index > 0) {
+                                      _otpFocusNodes[index - 1].requestFocus();
+                                    }
+                                  },
                                 ),
                               ),
                             ),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                              borderSide: BorderSide.none,
-                            ),
-                            counterText: "",
                           ),
-                        ),
 
                         const SizedBox(height: 30),
 
-                        // SEND OTP
                         SizedBox(
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: _sendOtp,
+                            onPressed: _otpSent ? _verifyOtp : _sendOtp,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF8B5CF6),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15),
                               ),
                             ),
-                            child: const Text(
-                              "Send OTP",
-                              style: TextStyle(
+                            child: Text(
+                              _otpSent ? "Verify OTP" : "Send OTP",
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
@@ -251,87 +324,34 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                         const SizedBox(height: 20),
 
                         if (_otpSent)
-                          Center(
-                            child: TextButton.icon(
-                              onPressed: _resendOtp,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text("Resend OTP"),
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TextButton.icon(
+                                onPressed: _resendOtp,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text("Resend OTP"),
+                              ),
+                              const SizedBox(width: 10),
+                              Text("|",
+                                  style:
+                                  TextStyle(color: Colors.grey[400])),
+                              const SizedBox(width: 10),
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _otpSent = false;
+                                    for (var c in _otpControllers) {
+                                      c.clear();
+                                    }
+                                  });
+                                },
+                                child: const Text("Change Number"),
+                              ),
+                            ],
                           ),
 
                         const SizedBox(height: 30),
-
-                        // CUSTOMER HOME
-                        SizedBox(
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _goToCustomerHome,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                            ),
-                            child: const Text(
-                              "Next Home",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // WORKER HOME
-                        SizedBox(
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _goToWorkerHome,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF8B5CF6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                            ),
-                            child: const Text(
-                              "W Home",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // ✅ ROLE SELECT BUTTON (NEW)
-                        SizedBox(
-                          height: 56,
-                          child: OutlinedButton(
-                            onPressed: _goToRoleSelect,
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFF8B5CF6)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                            ),
-                            child: const Text(
-                              "Change Role",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF8B5CF6),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
 
                         Text(
                           "By continuing, you agree to our Terms of Service and Privacy Policy",

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../home/customer_home.dart';
+import '../../home/worker_home.dart';
 
 class RoleSelectPage extends StatefulWidget {
   const RoleSelectPage({super.key});
@@ -24,7 +26,6 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
         child: SafeArea(
           child: Column(
             children: [
-              // Decorative circles
               Expanded(
                 child: Stack(
                   children: [
@@ -62,7 +63,6 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
                         children: [
                           const SizedBox(height: 40),
 
-                          // Header
                           const Text(
                             "Welcome!",
                             style: TextStyle(
@@ -82,7 +82,7 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
 
                           const SizedBox(height: 60),
 
-                          // Customer Card
+                          // CUSTOMER
                           _buildRoleCard(
                             index: 0,
                             title: "I'm a Customer",
@@ -92,13 +92,18 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
                               colors: [Color(0xFFFFFFFF), Color(0xFFF8F9FA)],
                             ),
                             onTap: () {
-                              Navigator.pushNamed(context, '/customerLogin');
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const HomeCustomerPage(),
+                                ),
+                              );
                             },
                           ),
 
                           const SizedBox(height: 20),
 
-                          // Worker Card
+                          // WORKER
                           _buildRoleCard(
                             index: 1,
                             title: "I'm a Worker",
@@ -109,17 +114,20 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
                             ),
                             isLight: false,
                             onTap: () {
-                              Navigator.pushNamed(context, '/workerLogin');
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const HomeWorkerPage(),
+                                ),
+                              );
                             },
                           ),
 
                           const SizedBox(height: 40),
 
-                          // Footer
+                          // Go Back
                           TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
+                            onPressed: () => Navigator.pop(context),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -171,8 +179,7 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
       onTapCancel: () => setState(() => _hoveredIndex = null),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        transform: Matrix4.identity()
-          ..scale(isHovered ? 0.98 : 1.0),
+        transform: Matrix4.identity()..scale(isHovered ? 0.98 : 1.0),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(24),
@@ -189,7 +196,6 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
           ),
           child: Row(
             children: [
-              // Icon
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -209,7 +215,6 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
 
               const SizedBox(width: 20),
 
-              // Text
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +224,9 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: isLight ? const Color(0xFF1F2937) : Colors.white,
+                        color: isLight
+                            ? const Color(0xFF1F2937)
+                            : Colors.white,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -236,7 +243,6 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
                 ),
               ),
 
-              // Arrow
               Icon(
                 Icons.arrow_forward_rounded,
                 color: isLight
