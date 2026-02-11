@@ -21,6 +21,6 @@ app.use('/api/customer', customerRoutes);
 
 
 
-app.listen(5050, () =>
-  console.log('🚀 Server running on 5050')
-);
+app.listen(5050, '0.0.0.0', () => {
+  console.log('Server running on port 5050');
+});

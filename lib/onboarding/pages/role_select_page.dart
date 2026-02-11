@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../home/customer_home.dart';
-import '../../home/worker_home.dart';
+import '../../customer/pages/customer_home.dart';
+import '../../worker/pages/worker_home.dart';
 
 class RoleSelectPage extends StatefulWidget {
   const RoleSelectPage({super.key});

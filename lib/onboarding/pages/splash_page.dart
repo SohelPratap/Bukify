@@ -1,8 +1,9 @@
+import 'package:bukify/onboarding/pages/register.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-// 🔥 IMPORT PHONE LOGIN PAGE
-import '../../onboarding/pages/phone_login_page.dart';
+import '../../auth/services/session_service.dart';
+import '../../onboarding/pages/login.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -44,17 +45,40 @@ class _SplashPageState extends State<SplashPage>
 
     _scaleController.forward();
 
-    Timer(const Duration(milliseconds: 500), () {
+    Timer(const Duration(milliseconds: 700), () async {
       _fadeController.forward();
+      await _checkSessionAndRedirect();
     });
   }
 
-  // 🔥 NAVIGATE TO PHONE LOGIN
-  void _goToPhoneLogin() {
+  Future<void> _checkSessionAndRedirect() async {
+    final isLoggedIn = await SessionService.hasSession();
+
+    if (!mounted) return;
+
+    if (isLoggedIn) {
+      // TEMP dashboard (replace later)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(
+            body: Center(
+              child: Text(
+                'Dashboard',
+                style: TextStyle(fontSize: 24),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _goToLogin() {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => const PhoneLoginPage(),
+        builder: (_) => const LoginPage(),
       ),
     );
   }
@@ -109,7 +133,6 @@ class _SplashPageState extends State<SplashPage>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    /// 🔥 LOGO
                     ScaleTransition(
                       scale: _scaleAnimation,
                       child: Container(
@@ -179,7 +202,7 @@ class _SplashPageState extends State<SplashPage>
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: ElevatedButton(
-                        onPressed: _goToPhoneLogin, // ✅ UPDATED
+                        onPressed: _goToLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: const Color(0xFF8B5CF6),
