@@ -1,9 +1,12 @@
-import 'package:bukify/onboarding/pages/register.dart';
+import 'package:bukify/customer/pages/customer_home.dart';
+import 'package:bukify/worker/pages/worker_home.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
 import '../../auth/services/session_service.dart';
 import '../../onboarding/pages/login.dart';
+import '../../worker/pages/worker_home.dart';
+import '../../customer/pages/customer_home.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -52,25 +55,28 @@ class _SplashPageState extends State<SplashPage>
   }
 
   Future<void> _checkSessionAndRedirect() async {
-    final isLoggedIn = await SessionService.hasSession();
+    final hasSession = await SessionService.hasSession();
 
     if (!mounted) return;
 
-    if (isLoggedIn) {
-      // TEMP dashboard (replace later)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(
-              child: Text(
-                'Dashboard',
-                style: TextStyle(fontSize: 24),
-              ),
-            ),
+    if (hasSession) {
+      final role = await SessionService.getRole();
+
+      if (role == 'worker') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const HomeWorkerPage(),
           ),
-        ),
-      );
+        );
+      } else if (role == 'customer') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const HomeCustomerPage(),
+          ),
+        );
+      }
     }
   }
 

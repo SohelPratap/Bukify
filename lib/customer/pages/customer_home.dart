@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../profile/pages/customer_profile_page.dart';
 
 class HomeCustomerPage extends StatefulWidget {
   const HomeCustomerPage({super.key});
@@ -10,11 +11,11 @@ class HomeCustomerPage extends StatefulWidget {
 class _HomeCustomerPageState extends State<HomeCustomerPage> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const SearchPage(),
-    const MapPage(),
-    const BookingPage(),
-    const ProfilePage(),
+  final List<Widget> _pages = const [
+    SearchPage(),
+    MapPage(),
+    BookingPage(),
+    CustomerProfilePage(), // 🔥 real profile
   ];
 
   @override
@@ -501,62 +502,6 @@ class BookingPage extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               "Schedule your service appointment",
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Profile Page
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFF5F7FA), Color(0xFFDCFCE7)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF10B981), Color(0xFF34D399)],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF10B981).withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.person, size: 60, color: Colors.white),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              "Your Profile",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF10B981),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Manage your account settings",
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
           ],

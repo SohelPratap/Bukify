@@ -5,6 +5,9 @@ import express from 'express';
 import authRoutes from './routes/auth.routes.js';
 import workerRoutes from './routes/worker.routes.js';
 import customerRoutes from './routes/customer.routes.js';
+import workerProfileRoutes from './routes/worker_profile.routes.js';
+import customerProfileRoutes from './routes/customer_profile.routes.js';
+
 
 
 
@@ -18,6 +21,9 @@ app.get('/health', (_, res) => res.json({ ok: true }));
 app.use('/auth', authRoutes);
 app.use('/api/worker', workerRoutes);
 app.use('/api/customer', customerRoutes);
+app.use('/api/worker', workerProfileRoutes);
+app.use('/api/customer', customerProfileRoutes);
+
 
 
 
