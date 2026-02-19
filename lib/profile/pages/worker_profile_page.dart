@@ -53,27 +53,169 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
       return const Center(child: Text('Failed to load profile'));
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
+    return SingleChildScrollView(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _profile!['full_name'] ?? 'Add your name',
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          // 🔥 Top Profile Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF8B5CF6), Color(0xFFA855F7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    size: 60,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _profile!['full_name'] ?? 'Add your name',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _profile!['email'],
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(_profile!['email']),
-          const SizedBox(height: 8),
-          Text("Skills: ${_profile!['skills'] ?? 'Not added'}"),
-          const SizedBox(height: 8),
-          Text("Experience: ${_profile!['experience_years']} years"),
-          const SizedBox(height: 8),
-          Text("Rating: ${_profile!['rating']} ⭐"),
-          const Spacer(),
-          ElevatedButton(
-            onPressed: _logout,
-            child: const Text("Logout"),
+
+          const SizedBox(height: 20),
+
+          // 🔥 Profile Info Cards
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                _buildInfoCard(
+                  Icons.build,
+                  "Skills",
+                  _profile!['skills'] ?? "Not added",
+                  const Color(0xFF4F46E5),
+                ),
+                const SizedBox(height: 16),
+                _buildInfoCard(
+                  Icons.work_history,
+                  "Experience",
+                  "${_profile!['experience_years']} years",
+                  const Color(0xFFF59E0B),
+                ),
+                const SizedBox(height: 16),
+                _buildInfoCard(
+                  Icons.star,
+                  "Rating",
+                  "${_profile!['rating']} ⭐",
+                  const Color(0xFF10B981),
+                ),
+                const SizedBox(height: 40),
+
+                // 🔥 Logout Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: _logout,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF4444),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    child: const Text(
+                      "Logout",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(
+      IconData icon, String title, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color.withOpacity(0.8), color],
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: Colors.white),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
