@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../profile/pages/worker_profile_page.dart';
+import '../../map/pages/map_page.dart';
 
 class HomeWorkerPage extends StatefulWidget {
   const HomeWorkerPage({super.key});
@@ -13,7 +14,7 @@ class _HomeWorkerPageState extends State<HomeWorkerPage> {
 
   final List<Widget> _pages = const [
     RequestsPage(),
-    MapPageWorker(),
+    MapPage(),
     WorkerProfilePage(), // 🔥 real profile
   ];
 
@@ -228,62 +229,6 @@ class RequestsPage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// Map Page for Worker
-class MapPageWorker extends StatelessWidget {
-  const MapPageWorker({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFF5F7FA), Color(0xFFE0E7FF)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF8B5CF6), Color(0xFFA855F7)],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.map, size: 60, color: Colors.white),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              "Map View",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF8B5CF6),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Check service locations near you",
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
-        ),
       ),
     );
   }
