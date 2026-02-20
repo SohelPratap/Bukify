@@ -2,7 +2,8 @@ import express from "express";
 import {
   searchSkills,
   addSkill,
-  getMySkills
+  getMySkills,
+  removeSkill
 } from "../controllers/skills.controller.js";
 
 import { requireAuth } from "../middlewares/auth.middleware.js";
@@ -14,5 +15,7 @@ router.get("/search", requireAuth, searchSkills);
 router.post("/add", requireAuth, addSkill);
 
 router.get("/my", requireAuth, getMySkills);
+
+router.delete("/remove/:skill_id", requireAuth, removeSkill);
 
 export default router;

@@ -149,3 +149,39 @@ export const getMySkills = async (req, res) => {
 
   }
 };
+/**
+ * REMOVE SKILL
+ * DELETE /api/skills/remove/:skill_id
+ */
+export const removeSkill = async (req, res) => {
+
+  try {
+
+    const workerId = req.user.userId;
+    const skillId = req.params.skill_id;
+
+    await pool.execute(
+
+      `DELETE FROM worker_skills
+       WHERE worker_id = ?
+       AND skill_id = ?`,
+
+      [workerId, skillId]
+
+    );
+
+    res.json({
+      message: "Skill removed"
+    });
+
+  }
+  catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+};
