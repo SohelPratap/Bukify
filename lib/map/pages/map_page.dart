@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -13,22 +14,63 @@ class _MapPageState extends State<MapPage> {
 
   final MapController _mapController = MapController();
 
-  final LatLng _defaultLocation = const LatLng(21.2514, 81.6296);
+  LatLng? _currentLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _getLocation();
+  }
+
+  /// GET REAL GPS LOCATION
+  Future<void> _getLocation() async {
+
+    LocationPermission permission;
+
+    permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    final latLng = LatLng(
+      position.latitude,
+      position.longitude,
+    );
+
+    setState(() {
+      _currentLocation = latLng;
+    });
+
+    _mapController.move(latLng, 15);
+  }
 
   @override
   Widget build(BuildContext context) {
 
+    if (_currentLocation == null) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
     return Stack(
       children: [
 
-        /// FULL SCREEN MAP
+        /// MAP
         FlutterMap(
 
           mapController: _mapController,
 
           options: MapOptions(
-            initialCenter: _defaultLocation,
-            initialZoom: 13,
+            initialCenter: _currentLocation!,
+            initialZoom: 15,
+            minZoom: 3,
+            maxZoom: 19,
           ),
 
           children: [
@@ -41,47 +83,32 @@ class _MapPageState extends State<MapPage> {
 
             MarkerLayer(
               markers: [
+
                 Marker(
-                  point: _defaultLocation,
+                  point: _currentLocation!,
                   width: 60,
                   height: 60,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF8B5CF6),
-                          Color(0xFFA855F7),
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF8B5CF6).withOpacity(0.4),
-                          blurRadius: 12,
-                        )
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.person_pin_circle,
-                      color: Colors.white,
-                      size: 40,
-                    ),
+
+                  child: const Icon(
+                    Icons.person_pin_circle,
+                    color: Color(0xFF8B5CF6),
+                    size: 50,
                   ),
                 ),
+
               ],
             ),
 
           ],
         ),
 
-        /// SEARCH BAR (FLOATING)
+        /// SEARCH BAR
         Positioned(
           top: 16,
           left: 16,
           right: 16,
 
           child: Container(
-
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
@@ -89,21 +116,18 @@ class _MapPageState extends State<MapPage> {
                 BoxShadow(
                   color: Colors.black.withOpacity(0.15),
                   blurRadius: 10,
-                  offset: const Offset(0, 4),
                 ),
               ],
             ),
 
-            child: TextField(
+            child: const TextField(
               decoration: InputDecoration(
                 hintText: "Search location or service...",
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search,
                   color: Color(0xFF8B5CF6),
                 ),
                 border: InputBorder.none,
-                contentPadding:
-                const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
           ),
@@ -118,7 +142,16 @@ class _MapPageState extends State<MapPage> {
             backgroundColor: const Color(0xFF8B5CF6),
 
             onPressed: () {
-              _mapController.move(_defaultLocation, 15);
+
+              if (_currentLocation != null) {
+
+                _mapController.move(
+                  _currentLocation!,
+                  15,
+                );
+
+              }
+
             },
 
             child: const Icon(Icons.my_location),
