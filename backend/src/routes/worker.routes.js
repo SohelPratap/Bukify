@@ -1,7 +1,11 @@
 import express from 'express';
 import { requireAuth } from '../middlewares/auth.middleware.js';
 import { requireRole } from '../middlewares/role.middleware.js';
-
+import {
+  toggleOnline,
+  updateServiceArea,
+  getServiceArea
+} from "../controllers/worker_profile.controller.js";
 const router = express.Router();
 
 router.get(
@@ -15,5 +19,9 @@ router.get(
     });
   }
 );
+
+router.post("/toggle-online", requireAuth, toggleOnline);
+router.post("/service-area", requireAuth, updateServiceArea);
+router.get("/service-area", requireAuth, getServiceArea);
 
 export default router;

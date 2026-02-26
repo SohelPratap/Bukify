@@ -4,21 +4,34 @@ import '../../services/skill_service.dart';
 import '../../../auth/services/session_service.dart';
 import '../../../onboarding/pages/login.dart';
 import '../../widgets/skill_selector.dart';
+import '../../services/worker_service.dart';
+import 'dart:async';
+import 'package:geolocator/geolocator.dart';
 
 class WorkerProfilePage extends StatefulWidget {
   const WorkerProfilePage({super.key});
 
   @override
-  State<WorkerProfilePage> createState() => _WorkerProfilePageState();
+  State<WorkerProfilePage> createState() => WorkerProfilePageState();
 }
 
-class _WorkerProfilePageState extends State<WorkerProfilePage> {
+class WorkerProfilePageState extends State<WorkerProfilePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
   Map<String, dynamic>? _profile;
   bool _loading = true;
 
+  bool _isOnline = false;
+
   bool _editSkills = false;
   List<dynamic> _skills = [];
+
+  Timer? _locationTimer;
+
+  double _serviceRadius = 10; // default 10km
+  bool _savingRadius = false;
 
   @override
   void initState() {
@@ -26,24 +39,61 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
     _loadProfile();
     _loadSkills();
   }
+  @override
+  void dispose() {
+    _locationTimer?.cancel();
+    super.dispose();
+  }
 
   /// LOAD PROFILE
   Future<void> _loadProfile() async {
 
     try {
 
-      final data =
-      await ProfileService.getProfile();
+      final data = await ProfileService.getProfile();
+      final area = await WorkerService.getServiceArea();
 
       setState(() {
         _profile = data;
+        _isOnline = data['is_online'] == 1;
+
+        if (area != null) {
+          _serviceRadius = (area['radius_km']).toDouble();
+        }
+
         _loading = false;
       });
 
+      if (_isOnline) {
+        _startLocationUpdates(); // resume timer if already online
+      }
+
     } catch (_) {
-
       setState(() => _loading = false);
+    }
+  }
+  /// Online Offline toggle
+  Future<void> _toggleOnline() async {
 
+    final newStatus = !_isOnline;
+
+    try {
+
+      await WorkerService.toggleOnline(newStatus);
+
+      setState(() {
+        _isOnline = newStatus;
+        _profile!['is_online'] = newStatus ? 1 : 0;
+      });
+
+      if (newStatus) {
+        _startLocationUpdates();
+      } else {
+        _stopLocationUpdates();
+      }
+
+    } catch (e) {
+      debugPrint("Toggle error: $e");
     }
   }
 
@@ -88,6 +138,34 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
     }
   }
 
+  /// service area
+  Future<void> _saveServiceArea() async {
+    setState(() {
+      _savingRadius = true;
+    });
+
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      await WorkerService.updateServiceArea(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        radiusKm: _serviceRadius,
+      );
+
+      debugPrint("Service area saved");
+
+    } catch (e) {
+      debugPrint("Service area error: $e");
+    }
+
+    setState(() {
+      _savingRadius = false;
+    });
+  }
+
   /// LOGOUT
   Future<void> _logout() async {
 
@@ -102,6 +180,51 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
         const LoginPage(),
       ),
           (route) => false,
+    );
+  }
+  ///Online toggle
+  Widget _buildOnlineToggle() {
+    return GestureDetector(
+      onTap: _toggleOnline,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: _isOnline
+              ? Colors.green.withOpacity(0.15)
+              : Colors.red.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: _isOnline
+                ? Colors.green
+                : Colors.redAccent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: _isOnline ? Colors.green : Colors.redAccent,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              _isOnline ? "Online" : "Offline",
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _isOnline ? Colors.green : Colors.redAccent,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -312,6 +435,80 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
                 ),
 
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+
+///service area
+  Widget _buildServiceAreaCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          const Text(
+            "Service Radius",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          Text(
+            "${_serviceRadius.toStringAsFixed(0)} km",
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF8B5CF6),
+            ),
+          ),
+
+          Slider(
+            min: 1,
+            max: 50,
+            divisions: 49,
+            value: _serviceRadius,
+            activeColor: const Color(0xFF8B5CF6),
+            onChanged: (value) {
+              setState(() {
+                _serviceRadius = value;
+              });
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _savingRadius ? null : _saveServiceArea,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8B5CF6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _savingRadius
+                  ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+                  : const Text("Save Area"),
+            ),
           ),
         ],
       ),
@@ -541,6 +738,8 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
                     Colors.white70,
                   ),
                 ),
+                const SizedBox(height: 12),
+                _buildOnlineToggle(),
 
               ],
             ),
@@ -563,6 +762,8 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
 
                 const SizedBox(
                     height: 16),
+                _buildServiceAreaCard(),
+                const SizedBox(height: 16),
 
                 _buildInfoCard(
                   Icons.work_history,
@@ -642,6 +843,9 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
       ),
     );
   }
+  void reloadProfile() {
+    _loadProfile();
+  }
   void _confirmRemoveSkill(
       Map skill) {
 
@@ -698,5 +902,38 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
             ],
           ),
     );
+
+  }
+  ///location update
+  void _startLocationUpdates() {
+    if (_locationTimer != null) return; // prevent duplicate timers
+
+    _locationTimer = Timer.periodic(
+      const Duration(seconds: 30),
+          (_) async {
+        try {
+          final position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+          );
+
+          await WorkerService.updateLocation(
+            latitude: position.latitude,
+            longitude: position.longitude,
+            accuracy: position.accuracy,
+            heading: position.heading,
+            speed: position.speed,
+          );
+
+          debugPrint("Location sent");
+        } catch (e) {
+          debugPrint("Location error: $e");
+        }
+      },
+    );
+  }
+
+  void _stopLocationUpdates() {
+    _locationTimer?.cancel();
+    _locationTimer = null; // important
   }
 }

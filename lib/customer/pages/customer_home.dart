@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../profile/pages/customer_profile_page.dart';
+import 'customer_profile_page.dart';
 import '../../map/pages/map_page.dart';
 
 class HomeCustomerPage extends StatefulWidget {
@@ -14,7 +14,7 @@ class _HomeCustomerPageState extends State<HomeCustomerPage> {
 
   final List<Widget> _pages = const [
     SearchPage(),
-    MapPage(),
+    MapPage(userRole: "customer"),
     BookingPage(),
     CustomerProfilePage(), // 🔥 real profile
   ];

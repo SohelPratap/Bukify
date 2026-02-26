@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../profile/pages/worker_profile_page.dart';
+import 'worker_profile_page.dart';
 import '../../map/pages/map_page.dart';
+import 'package:latlong2/latlong.dart';
+import '../../services/worker_service.dart';
 
 class HomeWorkerPage extends StatefulWidget {
   const HomeWorkerPage({super.key});
@@ -12,11 +14,36 @@ class HomeWorkerPage extends StatefulWidget {
 class _HomeWorkerPageState extends State<HomeWorkerPage> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    RequestsPage(),
-    MapPage(),
-    WorkerProfilePage(), // 🔥 real profile
-  ];
+  double? _serviceRadius;
+  LatLng? _serviceCenter;
+
+  final GlobalKey<WorkerProfilePageState> _profileKey =
+  GlobalKey<WorkerProfilePageState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServiceArea();
+  }
+
+  Future<void> _loadServiceArea() async {
+    try {
+      final area = await WorkerService.getServiceArea();
+
+      if (area != null) {
+        setState(() {
+          _serviceRadius = double.parse(area['radius_km'].toString());
+
+          _serviceCenter = LatLng(
+            double.parse(area['center_lat'].toString()),
+            double.parse(area['center_lng'].toString()),
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint("Service area load error: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,97 +60,57 @@ class _HomeWorkerPageState extends State<HomeWorkerPage> {
             ),
           ),
         ),
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/images/logo_2.png',
-              height: 28,
-              width: 28,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              "BukiFy Worker",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-              ),
-            ),
-          ],
+        title: const Text(
+          "BukiFy Worker",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
         ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              icon: Stack(
-                children: [
-                  const Icon(Icons.notifications_outlined, color: Colors.white),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFF6B6B),
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 8,
-                        minHeight: 8,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              onPressed: () {
-                // Navigate to notifications
-              },
-            ),
+      ),
+
+      body: [
+        const RequestsPage(),
+
+        MapPage(
+          userRole: "worker",
+          serviceRadius: _serviceRadius,
+          serviceCenter: _serviceCenter,
+        ),
+
+        WorkerProfilePage(key: _profileKey),
+      ][_currentIndex],
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        selectedItemColor: const Color(0xFF8B5CF6),
+        onTap: (index) async {
+          setState(() => _currentIndex = index);
+
+          if (index == 2) {
+            _profileKey.currentState?.reloadProfile();
+          }
+
+          // When coming back to map, refresh area
+          if (index == 1) {
+            await _loadServiceArea();
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt),
+            label: "Requests",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map_outlined),
+            label: "Map",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: "Profile",
           ),
         ],
-      ),
-      body: _pages[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF8B5CF6).withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF8B5CF6),
-          unselectedItemColor: Colors.grey[400],
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontSize: 12),
-          elevation: 0,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.list_alt),
-              label: "Requests",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.map_outlined),
-              label: "Map",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: "Profile",
-            ),
-          ],
-        ),
       ),
     );
   }

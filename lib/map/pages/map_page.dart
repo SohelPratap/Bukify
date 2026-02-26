@@ -1,20 +1,30 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  final String userRole;
+  final double? serviceRadius;
+  final LatLng? serviceCenter;
+
+  const MapPage({
+    super.key,
+    required this.userRole,
+    this.serviceRadius,
+    this.serviceCenter,
+  });
 
   @override
   State<MapPage> createState() => _MapPageState();
 }
 
 class _MapPageState extends State<MapPage> {
-
   final MapController _mapController = MapController();
 
   LatLng? _currentLocation;
+  double _mapRotation = 0;
 
   @override
   void initState() {
@@ -22,25 +32,17 @@ class _MapPageState extends State<MapPage> {
     _getLocation();
   }
 
-  /// GET REAL GPS LOCATION
   Future<void> _getLocation() async {
-
-    LocationPermission permission;
-
-    permission = await Geolocator.checkPermission();
-
+    var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+      await Geolocator.requestPermission();
     }
 
     final position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
 
-    final latLng = LatLng(
-      position.latitude,
-      position.longitude,
-    );
+    final latLng = LatLng(position.latitude, position.longitude);
 
     setState(() {
       _currentLocation = latLng;
@@ -51,113 +53,64 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-
     if (_currentLocation == null) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
-    return Stack(
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: _currentLocation!,
+        initialZoom: 15,
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.all,
+        ),
+        onPositionChanged: (position, hasGesture) {
+          setState(() {
+            _mapRotation = position.rotation;
+          });
+        },
+      ),
       children: [
+        TileLayer(
+          urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+          userAgentPackageName: "com.bukify.app",
+        ),
 
-        /// MAP
-        FlutterMap(
-
-          mapController: _mapController,
-
-          options: MapOptions(
-            initialCenter: _currentLocation!,
-            initialZoom: 15,
-            minZoom: 3,
-            maxZoom: 19,
-          ),
-
-          children: [
-
-            TileLayer(
-              urlTemplate:
-              "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-              userAgentPackageName: "com.bukify.app",
-            ),
-
-            MarkerLayer(
-              markers: [
-
-                Marker(
-                  point: _currentLocation!,
-                  width: 60,
-                  height: 60,
-
-                  child: const Icon(
-                    Icons.person_pin_circle,
-                    color: Color(0xFF8B5CF6),
-                    size: 50,
-                  ),
+        /// 🔥 Upright Marker
+        MarkerLayer(
+          markers: [
+            Marker(
+              point: _currentLocation!,
+              width: 60,
+              height: 60,
+              child: Transform.rotate(
+                angle: -_mapRotation * math.pi / 180,
+                child: const Icon(
+                  Icons.person_pin_circle,
+                  color: Color(0xFF8B5CF6),
+                  size: 50,
                 ),
-
-              ],
+              ),
             ),
-
           ],
         ),
 
-        /// SEARCH BAR
-        Positioned(
-          top: 16,
-          left: 16,
-          right: 16,
-
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 10,
-                ),
-              ],
-            ),
-
-            child: const TextField(
-              decoration: InputDecoration(
-                hintText: "Search location or service...",
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: Color(0xFF8B5CF6),
-                ),
-                border: InputBorder.none,
+        /// 🔥 Service Radius Circle
+        if (widget.userRole == "worker" &&
+            widget.serviceRadius != null)
+          CircleLayer(
+            circles: [
+              CircleMarker(
+                point: widget.serviceCenter ?? _currentLocation!,
+                radius: widget.serviceRadius! * 1000,
+                useRadiusInMeter: true,
+                color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                borderColor: const Color(0xFF8B5CF6),
+                borderStrokeWidth: 2,
               ),
-            ),
+            ],
           ),
-        ),
-
-        /// MY LOCATION BUTTON
-        Positioned(
-          bottom: 20,
-          right: 20,
-
-          child: FloatingActionButton(
-            backgroundColor: const Color(0xFF8B5CF6),
-
-            onPressed: () {
-
-              if (_currentLocation != null) {
-
-                _mapController.move(
-                  _currentLocation!,
-                  15,
-                );
-
-              }
-
-            },
-
-            child: const Icon(Icons.my_location),
-          ),
-        ),
-
       ],
     );
   }
