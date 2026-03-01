@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/profile_service.dart';
 import '../../../auth/services/session_service.dart';
 import '../../../onboarding/pages/login.dart';
+import '../../../services/customer_service.dart';
 
 class CustomerProfilePage extends StatefulWidget {
   const CustomerProfilePage({super.key});
@@ -14,10 +15,14 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
   Map<String, dynamic>? _profile;
   bool _loading = true;
 
+  List<dynamic> _addresses = [];
+  bool _loadingAddresses = true;
+
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadAddresses();
   }
 
   Future<void> _loadProfile() async {
@@ -32,6 +37,18 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
     }
   }
 
+  Future<void> _loadAddresses() async {
+    try {
+      final data = await CustomerService.getAddresses();
+      setState(() {
+        _addresses = data;
+        _loadingAddresses = false;
+      });
+    } catch (_) {
+      setState(() => _loadingAddresses = false);
+    }
+  }
+
   Future<void> _logout() async {
     await SessionService.clearSession();
     if (!mounted) return;
@@ -40,6 +57,56 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
       context,
       MaterialPageRoute(builder: (_) => const LoginPage()),
           (route) => false,
+    );
+  }
+
+  Future<void> _deleteAddress(String id) async {
+    await CustomerService.deleteAddress(id);
+    _loadAddresses();
+  }
+
+  void _openAddAddressDialog() {
+    final labelController = TextEditingController();
+    final addressController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Add Address"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: labelController,
+              decoration: const InputDecoration(labelText: "Label"),
+            ),
+            TextField(
+              controller: addressController,
+              decoration: const InputDecoration(labelText: "Address"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              await CustomerService.addAddress(
+                label: labelController.text,
+                address: addressController.text,
+                latitude: 21.2514, // TEMP
+                longitude: 81.6296, // TEMP
+              );
+
+              Navigator.pop(context);
+              _loadAddresses();
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
     );
   }
 
@@ -56,7 +123,8 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // 🔥 HEADER SECTION
+
+          // HEADER
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
@@ -108,11 +176,11 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
 
           const SizedBox(height: 25),
 
-          // 🔥 INFO CARD
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
+
                 _buildInfoCard(
                   icon: Icons.business,
                   title: "Organization",
@@ -120,9 +188,12 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                   color: const Color(0xFF4F46E5),
                 ),
 
+                const SizedBox(height: 20),
+
+                _buildAddressesCard(),
+
                 const SizedBox(height: 40),
 
-                // 🔥 LOGOUT BUTTON
                 SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -149,6 +220,105 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressesCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF8B5CF6).withOpacity(0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Saved Addresses",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add, color: Color(0xFF8B5CF6)),
+                onPressed: _openAddAddressDialog,
+              )
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          if (_loadingAddresses)
+            const Center(child: CircularProgressIndicator())
+          else if (_addresses.isEmpty)
+            const Text("No addresses added yet")
+          else
+            Column(
+              children: _addresses.map((addr) {
+                final isDefault = addr['is_default'] == 1;
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDefault
+                        ? const Color(0xFF8B5CF6).withOpacity(0.08)
+                        : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on,
+                          color: Color(0xFF8B5CF6)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              addr['label'] ?? "Address",
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(addr['address'] ?? ""),
+                          ],
+                        ),
+                      ),
+                      if (isDefault)
+                        const Text(
+                          "Default",
+                          style: TextStyle(
+                            color: Color(0xFF8B5CF6),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      IconButton(
+                        icon: const Icon(Icons.delete,
+                            color: Colors.redAccent),
+                        onPressed: () =>
+                            _deleteAddress(addr['id']),
+                      )
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
         ],
       ),
     );

@@ -9,6 +9,9 @@ import workerProfileRoutes from './routes/worker_profile.routes.js';
 import customerProfileRoutes from './routes/customer_profile.routes.js';
 import skillRoutes from "./routes/skills.routes.js";
 import locationRoutes from "./routes/location.routes.js";
+import jobsRoutes from "./routes/jobs.routes.js";
+
+
 
 
 
@@ -32,6 +35,7 @@ app.use('/api/worker', workerProfileRoutes);
 app.use('/api/customer', customerProfileRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/location", locationRoutes);
+app.use("/api/jobs", jobsRoutes);
 
 
 

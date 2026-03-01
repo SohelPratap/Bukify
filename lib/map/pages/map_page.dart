@@ -33,16 +33,25 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _getLocation() async {
-    var permission = await Geolocator.checkPermission();
+
+    LocationPermission permission;
+
+    permission = await Geolocator.checkPermission();
+
     if (permission == LocationPermission.denied) {
-      await Geolocator.requestPermission();
+      permission = await Geolocator.requestPermission();
     }
 
     final position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
 
-    final latLng = LatLng(position.latitude, position.longitude);
+    if (!mounted) return;   // 🔥 VERY IMPORTANT
+
+    final latLng = LatLng(
+      position.latitude,
+      position.longitude,
+    );
 
     setState(() {
       _currentLocation = latLng;
