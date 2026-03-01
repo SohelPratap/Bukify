@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/jobs_service.dart';
+import '../../services/customer_jobs_service.dart';
 import '../../services/customer_service.dart';
 
 class BookingPage extends StatefulWidget {

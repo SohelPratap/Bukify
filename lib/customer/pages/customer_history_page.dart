@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/jobs_service.dart';
+import '../../services/customer_jobs_service.dart';
 
 class CustomerHistoryPage extends StatefulWidget {
   const CustomerHistoryPage({super.key});

@@ -96,46 +96,4 @@ class JobsService {
       throw Exception('Cancel failed');
     }
   }
-
-  /* =========================================================
-     GET NEARBY JOBS (Worker)
-  ========================================================= */
-
-  static Future<List<dynamic>> getNearbyJobs() async {
-
-    final token = await SessionService.getToken();
-
-    final res = await http.get(
-      Uri.parse('$baseUrl/api/jobs/nearby'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (res.statusCode != 200) {
-      throw Exception('Failed to load nearby jobs');
-    }
-
-    return jsonDecode(res.body);
-  }
-
-  /* =========================================================
-     ACCEPT JOB (Worker)
-  ========================================================= */
-
-  static Future<void> acceptJob(String jobId) async {
-
-    final token = await SessionService.getToken();
-
-    final res = await http.post(
-      Uri.parse('$baseUrl/api/jobs/$jobId/accept'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (res.statusCode != 200) {
-      throw Exception('Failed to accept job');
-    }
-  }
 }

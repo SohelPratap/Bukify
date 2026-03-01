@@ -147,17 +147,21 @@ export const getNearbyJobs = async (req, res) => {
 
     const [rows] = await pool.execute(
       `
-      SELECT j.*, s.name AS skill_name
-      FROM jobs j
-      JOIN skills s ON j.skill_id = s.id
-      JOIN worker_skills ws
-        ON ws.skill_id = j.skill_id
-      JOIN worker_service_areas wsa
-        ON wsa.worker_id = ws.worker_id
-      WHERE ws.worker_id = ?
-        AND ws.status = 'approved'
-        AND j.status = 'open'
-        AND (
+      SELECT
+        j.id,
+        j.title,
+        j.description,
+        j.status,
+        j.created_at,
+        s.name AS skill_name,
+        u.email AS customer_email,
+
+        CASE
+          WHEN ws.worker_id IS NOT NULL THEN 1
+          ELSE 0
+        END AS is_skill_match,
+
+        (
           6371 * ACOS(
             COS(RADIANS(wsa.center_lat)) *
             COS(RADIANS(j.latitude)) *
@@ -165,10 +169,33 @@ export const getNearbyJobs = async (req, res) => {
             SIN(RADIANS(wsa.center_lat)) *
             SIN(RADIANS(j.latitude))
           )
-        ) <= wsa.radius_km
-      ORDER BY j.created_at DESC
+        ) AS distance_km
+
+      FROM jobs j
+
+      JOIN skills s ON j.skill_id = s.id
+      JOIN users u ON j.customer_id = u.id
+      JOIN worker_service_areas wsa ON wsa.worker_id = ?
+
+      LEFT JOIN worker_skills ws
+        ON ws.skill_id = j.skill_id
+        AND ws.worker_id = ?
+        AND ws.status = 'approved'
+
+      WHERE j.status = 'open'
+      AND (
+        6371 * ACOS(
+          COS(RADIANS(wsa.center_lat)) *
+          COS(RADIANS(j.latitude)) *
+          COS(RADIANS(j.longitude) - RADIANS(wsa.center_lng)) +
+          SIN(RADIANS(wsa.center_lat)) *
+          SIN(RADIANS(j.latitude))
+        )
+      ) <= wsa.radius_km
+
+      ORDER BY is_skill_match DESC, distance_km ASC
       `,
-      [workerId]
+      [workerId, workerId]
     );
 
     res.json(rows);
@@ -185,15 +212,17 @@ export const getNearbyJobs = async (req, res) => {
    - Prevent race condition
 ====================================================== */
 
-export const acceptJob = async (req, res) => {
+export const startJob = async (req, res) => {
   try {
     const workerId = req.user.userId;
     const jobId = req.params.id;
 
     const [result] = await pool.execute(
       `UPDATE jobs
-       SET accepted_by = ?, status = 'accepted'
-       WHERE id = ? AND status = 'open'`,
+       SET status = 'in_progress',
+           accepted_by = ?
+       WHERE id = ?
+       AND status = 'open'`,
       [workerId, jobId]
     );
 
@@ -203,10 +232,84 @@ export const acceptJob = async (req, res) => {
       });
     }
 
-    res.json({ message: "Job accepted successfully" });
+    res.json({ message: "Job started successfully" });
 
   } catch (err) {
-    console.error("Accept job error:", err);
+    console.error("Start job error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const completeJob = async (req, res) => {
+  try {
+    const workerId = req.user.userId;
+    const jobId = req.params.id;
+
+    const [result] = await pool.execute(
+      `UPDATE jobs
+       SET status = 'completed'
+       WHERE id = ?
+       AND accepted_by = ?
+       AND status = 'in_progress'`,
+      [jobId, workerId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({
+        message: "Cannot complete this job"
+      });
+    }
+
+    res.json({ message: "Job completed" });
+
+  } catch (err) {
+    console.error("Complete job error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getWorkerActiveJobs = async (req, res) => {
+  try {
+    const workerId = req.user.userId;
+
+    const [rows] = await pool.execute(
+      `SELECT j.*, s.name AS skill_name
+       FROM jobs j
+       JOIN skills s ON j.skill_id = s.id
+       WHERE j.accepted_by = ?
+       AND j.status = 'in_progress'
+       ORDER BY j.created_at DESC`,
+      [workerId]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Active jobs error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const getWorkerCompletedJobs = async (req, res) => {
+  try {
+    const workerId = req.user.userId;
+
+    const [rows] = await pool.execute(
+      `SELECT j.*, s.name AS skill_name
+       FROM jobs j
+       JOIN skills s ON j.skill_id = s.id
+       WHERE j.accepted_by = ?
+       AND j.status = 'completed'
+       ORDER BY j.updated_at DESC`,
+      [workerId]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Completed jobs error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

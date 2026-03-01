@@ -6,16 +6,22 @@ import {
   getMyPastJobs,
   cancelJob,
   getNearbyJobs,
-  acceptJob
+  startJob,
+  completeJob,
+  getWorkerActiveJobs,
+  getWorkerCompletedJobs
 } from "../controllers/jobs.controller.js";
 
 const router = express.Router();
 
 router.post("/", requireAuth, createJob);
 router.get("/nearby", requireAuth, getNearbyJobs);
-router.post("/:id/accept", requireAuth, acceptJob);
+router.put("/:id/start", requireAuth, startJob);
 router.get("/my/active", requireAuth, getMyActiveJobs);
 router.get("/my/history", requireAuth, getMyPastJobs);
 router.put("/:id/cancel", requireAuth, cancelJob);
+router.put("/:id/complete", requireAuth, completeJob);
+router.get("/worker/active", requireAuth, getWorkerActiveJobs);
+router.get("/worker/completed", requireAuth, getWorkerCompletedJobs);
 
 export default router;
