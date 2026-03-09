@@ -45,8 +45,8 @@ export const getAddresses = async (req, res) => {
 
     const [rows] = await pool.execute(
       `SELECT * FROM customer_addresses
-       WHERE user_id = ?
-       ORDER BY is_default DESC, created_at DESC`,
+        WHERE user_id = ? AND is_deleted = 0
+        ORDER BY is_default DESC, created_at DESC`,
       [userId]
     );
 
@@ -66,13 +66,13 @@ export const deleteAddress = async (req, res) => {
     const { id } = req.params;
 
     await pool.execute(
-      `DELETE FROM customer_addresses
+      `UPDATE customer_addresses
+       SET is_deleted = 1
        WHERE id = ? AND user_id = ?`,
       [id, userId]
     );
 
     res.json({ message: "Address deleted" });
-
   } catch (err) {
     console.error("Delete address error:", err);
     res.status(500).json({ message: "Server error" });
@@ -121,7 +121,7 @@ export const searchAddresses = async (req, res) => {
     const [rows] = await pool.execute(
       `SELECT id, label, address, latitude, longitude, is_default
        FROM customer_addresses
-       WHERE user_id = ?
+       WHERE user_id = ? AND is_deleted = 0
        AND (label LIKE ? OR address LIKE ?)
        ORDER BY is_default DESC, created_at DESC
        LIMIT 10`,

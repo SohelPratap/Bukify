@@ -181,15 +181,6 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "My Jobs",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: _ink,
-              letterSpacing: -0.5,
-            ),
-          ),
           const SizedBox(height: 14),
           Container(
             height: 44,
