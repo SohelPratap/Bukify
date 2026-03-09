@@ -3,6 +3,10 @@ import 'customer_profile_page.dart';
 import '../../map/pages/map_page.dart';
 import 'booking_page.dart';
 import 'customer_history_page.dart';
+import 'customer_search_page.dart'; // add this
+
+
+
 
 class HomeCustomerPage extends StatefulWidget {
   const HomeCustomerPage({super.key});
@@ -15,7 +19,7 @@ class _HomeCustomerPageState extends State<HomeCustomerPage> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = const [
-    SearchPage(),
+    CustomerSearchPage(),
     MapPage(userRole: "customer"),
     BookingPage(),
     CustomerHistoryPage(),
@@ -84,23 +88,5 @@ class _HomeCustomerPageState extends State<HomeCustomerPage> {
   }
 }
 
-/* ========================= SEARCH PAGE ========================= */
 
-class SearchPage extends StatelessWidget {
-  const SearchPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        "Search Services",
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF8B5CF6),
-        ),
-      ),
-    );
-  }
-}
 

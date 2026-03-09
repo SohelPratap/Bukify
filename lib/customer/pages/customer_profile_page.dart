@@ -3,6 +3,7 @@ import '../../services/profile_service.dart';
 import '../../../auth/services/session_service.dart';
 import '../../../onboarding/pages/login.dart';
 import '../../../services/customer_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CustomerProfilePage extends StatefulWidget {
   const CustomerProfilePage({super.key});
@@ -132,14 +133,83 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              await CustomerService.addAddress(
-                label: labelController.text,
-                address: addressController.text,
-                latitude: 21.2514,
-                longitude: 81.6296,
-              );
+              // close dialog first
               Navigator.pop(context);
-              _loadAddresses();
+
+              // show loading snack
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Row(
+                    children: [
+                      SizedBox(
+                        width: 16, height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text("Getting your location..."),
+                    ],
+                  ),
+                  duration: Duration(seconds: 4),
+                  backgroundColor: Color(0xFF8B5CF6),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+
+              try {
+                LocationPermission perm =
+                await Geolocator.checkPermission();
+                if (perm == LocationPermission.denied) {
+                  perm = await Geolocator.requestPermission();
+                }
+
+                final position = await Geolocator.getCurrentPosition(
+                  desiredAccuracy: LocationAccuracy.high,
+                );
+
+                await CustomerService.addAddress(
+                  label: labelController.text,
+                  address: addressController.text,
+                  latitude: position.latitude,
+                  longitude: position.longitude,
+                );
+
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                _loadAddresses();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.check_circle_outline,
+                            color: Colors.white, size: 18),
+                        SizedBox(width: 10),
+                        Text("Address saved with your location"),
+                      ],
+                    ),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text("Could not get location. Try again."),
+                    backgroundColor: Colors.redAccent,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF8B5CF6),

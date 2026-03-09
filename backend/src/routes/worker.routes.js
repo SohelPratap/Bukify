@@ -6,6 +6,10 @@ import {
   updateServiceArea,
   getServiceArea
 } from "../controllers/worker_profile.controller.js";
+
+import { searchWorkers } from "../controllers/worker_profile.controller.js";
+
+
 const router = express.Router();
 
 router.get(
@@ -23,5 +27,6 @@ router.get(
 router.post("/toggle-online", requireAuth, toggleOnline);
 router.post("/service-area", requireAuth, updateServiceArea);
 router.get("/service-area", requireAuth, getServiceArea);
+router.get("/search", requireAuth, searchWorkers);
 
 export default router;

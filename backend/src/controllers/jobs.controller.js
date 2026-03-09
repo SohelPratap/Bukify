@@ -141,70 +141,77 @@ export const cancelJob = async (req, res) => {
    - Inside worker radius (Haversine formula)
 ====================================================== */
 
-export const getNearbyJobs = async (req, res) => {
-  try {
-    const workerId = req.user.userId;
+ export const getNearbyJobs = async (req, res) => {
+   try {
+     const workerId = req.user.userId;
 
-    const [rows] = await pool.execute(
-      `
-      SELECT
-        j.id,
-        j.title,
-        j.description,
-        j.status,
-        j.created_at,
-        s.name AS skill_name,
-        u.email AS customer_email,
+     const [rows] = await pool.execute(
+       `
+       SELECT
+         j.id,
+         j.title,
+         j.description,
+         j.status,
+         j.created_at,
+         s.name AS skill_name,
+         u.email AS customer_email,
 
-        CASE
-          WHEN ws.worker_id IS NOT NULL THEN 1
-          ELSE 0
-        END AS is_skill_match,
+         CASE
+           WHEN ws.worker_id IS NOT NULL THEN 1
+           ELSE 0
+         END AS is_skill_match,
 
-        (
-          6371 * ACOS(
-            COS(RADIANS(wsa.center_lat)) *
-            COS(RADIANS(j.latitude)) *
-            COS(RADIANS(j.longitude) - RADIANS(wsa.center_lng)) +
-            SIN(RADIANS(wsa.center_lat)) *
-            SIN(RADIANS(j.latitude))
-          )
-        ) AS distance_km
+         -- Use live location if available, else fall back to service area center
+         ROUND(
+           6371 * ACOS(
+             LEAST(1.0, GREATEST(-1.0,
+               COS(RADIANS(COALESCE(ul.latitude, wsa.center_lat))) *
+               COS(RADIANS(j.latitude)) *
+               COS(RADIANS(j.longitude) - RADIANS(COALESCE(ul.longitude, wsa.center_lng))) +
+               SIN(RADIANS(COALESCE(ul.latitude, wsa.center_lat))) *
+               SIN(RADIANS(j.latitude))
+             ))
+           ), 2
+         ) AS distance_km
 
-      FROM jobs j
+       FROM jobs j
 
-      JOIN skills s ON j.skill_id = s.id
-      JOIN users u ON j.customer_id = u.id
-      JOIN worker_service_areas wsa ON wsa.worker_id = ?
+       JOIN skills s ON j.skill_id = s.id
+       JOIN users u ON j.customer_id = u.id
+       JOIN worker_service_areas wsa ON wsa.worker_id = ?
 
-      LEFT JOIN worker_skills ws
-        ON ws.skill_id = j.skill_id
-        AND ws.worker_id = ?
-        AND ws.status = 'approved'
+       -- live location (may not exist)
+       LEFT JOIN user_locations ul ON ul.user_id = ?
 
-      WHERE j.status = 'open'
-      AND (
-        6371 * ACOS(
-          COS(RADIANS(wsa.center_lat)) *
-          COS(RADIANS(j.latitude)) *
-          COS(RADIANS(j.longitude) - RADIANS(wsa.center_lng)) +
-          SIN(RADIANS(wsa.center_lat)) *
-          SIN(RADIANS(j.latitude))
-        )
-      ) <= wsa.radius_km
+       LEFT JOIN worker_skills ws
+         ON ws.skill_id = j.skill_id
+         AND ws.worker_id = ?
 
-      ORDER BY is_skill_match DESC, distance_km ASC
-      `,
-      [workerId, workerId]
-    );
+       WHERE j.status = 'open'
+       AND (
+         6371 * ACOS(
+           LEAST(1.0, GREATEST(-1.0,
+             COS(RADIANS(COALESCE(ul.latitude, wsa.center_lat))) *
+             COS(RADIANS(j.latitude)) *
+             COS(RADIANS(j.longitude) - RADIANS(COALESCE(ul.longitude, wsa.center_lng))) +
+             SIN(RADIANS(COALESCE(ul.latitude, wsa.center_lat))) *
+             SIN(RADIANS(j.latitude))
+           ))
+         )
+       ) <= wsa.radius_km
 
-    res.json(rows);
+       ORDER BY is_skill_match DESC, distance_km ASC
+       `,
+       [workerId, workerId, workerId]
+     );
 
-  } catch (err) {
-    console.error("Nearby jobs error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+     res.json(rows);
+
+   } catch (err) {
+     console.error("Nearby jobs error:", err);
+     res.status(500).json({ message: "Server error" });
+   }
+ };
 
 /* ======================================================
    ACCEPT JOB
