@@ -384,7 +384,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                SizedBox(height: 30 + MediaQuery.of(context).padding.bottom + 70),
               ],
             ),
           ),

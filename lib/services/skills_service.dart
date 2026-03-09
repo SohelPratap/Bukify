@@ -91,5 +91,24 @@ class SkillService {
     );
   }
 
+
+  static final String _base = dotenv.env['API_BASE_URL']!;
+
+  /// Returns a flat list of skill name strings from GET /api/skills
+  /// Your existing endpoint already returns [{id, name}, ...] — we just extract names.
+  static Future<List<String>> getSkills() async {
+    final token = await SessionService.getToken();
+    final res = await http.get(
+      Uri.parse('$_base/api/skills'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (res.statusCode != 200) throw Exception('Failed to load skills');
+    final List<dynamic> data = jsonDecode(res.body);
+    return data
+        .map<String>((s) => s['name']?.toString() ?? '')
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
+
 }
 

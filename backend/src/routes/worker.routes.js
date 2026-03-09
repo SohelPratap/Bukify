@@ -4,11 +4,10 @@ import { requireRole } from '../middlewares/role.middleware.js';
 import {
   toggleOnline,
   updateServiceArea,
-  getServiceArea
+  getServiceArea,
+  searchWorkers,
+  getWorkersForMap
 } from "../controllers/worker_profile.controller.js";
-
-import { searchWorkers } from "../controllers/worker_profile.controller.js";
-
 
 const router = express.Router();
 
@@ -28,5 +27,6 @@ router.post("/toggle-online", requireAuth, toggleOnline);
 router.post("/service-area", requireAuth, updateServiceArea);
 router.get("/service-area", requireAuth, getServiceArea);
 router.get("/search", requireAuth, searchWorkers);
+router.get("/map", requireAuth, getWorkersForMap);
 
 export default router;

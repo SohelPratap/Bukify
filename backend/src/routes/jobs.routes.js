@@ -9,7 +9,9 @@ import {
   startJob,
   completeJob,
   getWorkerActiveJobs,
-  getWorkerCompletedJobs
+  getWorkerCompletedJobs,
+  searchJobs,
+  getJobsForMap
 } from "../controllers/jobs.controller.js";
 
 const router = express.Router();
@@ -23,5 +25,7 @@ router.put("/:id/cancel", requireAuth, cancelJob);
 router.put("/:id/complete", requireAuth, completeJob);
 router.get("/worker/active", requireAuth, getWorkerActiveJobs);
 router.get("/worker/completed", requireAuth, getWorkerCompletedJobs);
+router.get("/search", requireAuth, searchJobs);
+router.get("/map", requireAuth, getJobsForMap);
 
 export default router;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/profile_service.dart';
-import '../../services/skill_service.dart';
+import '../../services/skills_service.dart';
 import '../../../auth/services/session_service.dart';
 import '../../../onboarding/pages/login.dart';
 import '../../widgets/skill_selector.dart';
@@ -386,7 +386,7 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                SizedBox(height: 30 + MediaQuery.of(context).padding.bottom + 70),
               ],
             ),
           ),

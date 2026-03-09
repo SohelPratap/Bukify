@@ -318,3 +318,156 @@ export const getWorkerCompletedJobs = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
+
+
+export const searchJobs = async (req, res) => {
+  try {
+    const workerId = req.user.userId;
+    const { skill, lat, lng } = req.query;
+
+    if (!skill || !lat || !lng) {
+      return res.status(400).json({ message: "skill, lat, lng required" });
+    }
+
+    const [rows] = await pool.execute(
+      `
+      SELECT
+        j.id,
+        j.title,
+        j.description,
+        j.status,
+        j.created_at,
+        s.name AS skill_name,
+        u.email AS customer_email,
+
+        CASE
+          WHEN ws.worker_id IS NOT NULL THEN 1
+          ELSE 0
+        END AS is_skill_match,
+
+        ROUND(
+          6371 * ACOS(
+            LEAST(1.0, GREATEST(-1.0,
+              COS(RADIANS(?)) * COS(RADIANS(j.latitude)) *
+              COS(RADIANS(j.longitude) - RADIANS(?)) +
+              SIN(RADIANS(?)) * SIN(RADIANS(j.latitude))
+            ))
+          ), 2
+        ) AS distance_km
+
+      FROM jobs j
+      JOIN skills s ON j.skill_id = s.id
+      JOIN users u ON j.customer_id = u.id
+
+      LEFT JOIN worker_skills ws
+        ON ws.skill_id = j.skill_id
+        AND ws.worker_id = ?
+
+      WHERE j.status = 'open'
+        AND s.name LIKE ?
+        AND (
+          6371 * ACOS(
+            LEAST(1.0, GREATEST(-1.0,
+              COS(RADIANS(?)) * COS(RADIANS(j.latitude)) *
+              COS(RADIANS(j.longitude) - RADIANS(?)) +
+              SIN(RADIANS(?)) * SIN(RADIANS(j.latitude))
+            ))
+          )
+        ) <= 50
+
+      ORDER BY is_skill_match DESC, distance_km ASC
+      LIMIT 30
+      `,
+      [
+        parseFloat(lat), parseFloat(lng), parseFloat(lat),   // distance select
+        workerId,                                              // skill match check
+        `%${skill}%`,                                         // skill filter
+        parseFloat(lat), parseFloat(lng), parseFloat(lat),   // WHERE distance
+      ]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Search jobs error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getJobsForMap = async (req, res) => {
+  try {
+    const workerId = req.user.userId;
+    const { skill, lat, lng } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ message: "lat, lng required" });
+    }
+
+    const [rows] = await pool.execute(
+      `
+      SELECT
+        j.id,
+        j.title,
+        j.latitude,
+        j.longitude,
+        j.status,
+        s.name AS skill_name,
+        u.email AS customer_email,
+
+        CASE WHEN ws.worker_id IS NOT NULL THEN 1 ELSE 0 END AS is_skill_match,
+
+        ROUND(
+          6371 * ACOS(
+            LEAST(1.0, GREATEST(-1.0,
+              COS(RADIANS(?)) * COS(RADIANS(j.latitude)) *
+              COS(RADIANS(j.longitude) - RADIANS(?)) +
+              SIN(RADIANS(?)) * SIN(RADIANS(j.latitude))
+            ))
+          ), 2
+        ) AS distance_km
+
+      FROM jobs j
+      JOIN skills s ON j.skill_id = s.id
+      JOIN users u ON j.customer_id = u.id
+      LEFT JOIN worker_skills ws
+        ON ws.skill_id = j.skill_id AND ws.worker_id = ?
+
+      WHERE j.status = 'open'
+        ${skill ? "AND s.name LIKE ?" : ""}
+        AND (
+          6371 * ACOS(
+            LEAST(1.0, GREATEST(-1.0,
+              COS(RADIANS(?)) * COS(RADIANS(j.latitude)) *
+              COS(RADIANS(j.longitude) - RADIANS(?)) +
+              SIN(RADIANS(?)) * SIN(RADIANS(j.latitude))
+            ))
+          )
+        ) <= 50
+
+      ORDER BY is_skill_match DESC, distance_km ASC
+      LIMIT 50
+      `,
+      skill
+        ? [
+            parseFloat(lat), parseFloat(lng), parseFloat(lat),
+            workerId,
+            `%${skill}%`,
+            parseFloat(lat), parseFloat(lng), parseFloat(lat),
+          ]
+        : [
+            parseFloat(lat), parseFloat(lng), parseFloat(lat),
+            workerId,
+            parseFloat(lat), parseFloat(lng), parseFloat(lat),
+          ]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Map jobs error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

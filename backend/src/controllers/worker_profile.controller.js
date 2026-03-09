@@ -188,3 +188,69 @@ export const searchWorkers = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
+export const getWorkersForMap = async (req, res) => {
+  try {
+    const { skill, lat, lng } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ message: "lat, lng required" });
+    }
+
+    const [rows] = await pool.execute(
+      `
+      SELECT
+        u.id,
+        u.email,
+        u.is_online,
+        wp.full_name,
+        wp.rating,
+        wp.experience_years,
+        ul.latitude,
+        ul.longitude,
+        wsa.radius_km,
+
+        GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR ', ') AS skills_list,
+
+        ROUND(
+          6371 * ACOS(
+            LEAST(1.0, GREATEST(-1.0,
+              COS(RADIANS(?)) * COS(RADIANS(ul.latitude)) *
+              COS(RADIANS(ul.longitude) - RADIANS(?)) +
+              SIN(RADIANS(?)) * SIN(RADIANS(ul.latitude))
+            ))
+          ), 2
+        ) AS distance_km
+
+      FROM users u
+      JOIN worker_profile wp ON u.id = wp.user_id
+      JOIN worker_service_areas wsa ON u.id = wsa.worker_id
+      JOIN user_locations ul ON u.id = ul.user_id
+      LEFT JOIN worker_skills ws ON u.id = ws.worker_id
+      LEFT JOIN skills s ON ws.skill_id = s.id
+
+      WHERE u.role = 'worker'
+        ${skill ? "AND u.id IN (SELECT ws2.worker_id FROM worker_skills ws2 JOIN skills s2 ON ws2.skill_id = s2.id WHERE s2.name LIKE ?)" : ""}
+
+      GROUP BY
+        u.id, u.email, u.is_online, wp.full_name,
+        wp.rating, wp.experience_years,
+        ul.latitude, ul.longitude, wsa.radius_km
+
+      ORDER BY distance_km ASC
+      LIMIT 50
+      `,
+      skill
+        ? [parseFloat(lat), parseFloat(lng), parseFloat(lat), `%${skill}%`]
+        : [parseFloat(lat), parseFloat(lng), parseFloat(lat)]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Map workers error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

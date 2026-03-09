@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/skill_service.dart';
+import '../services/skills_service.dart';
 
 class SkillSelector extends StatefulWidget {
 
