@@ -72,38 +72,84 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Add Address"),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          "Add Address",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E1B3A),
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: labelController,
-              decoration: const InputDecoration(labelText: "Label"),
+              decoration: InputDecoration(
+                labelText: "Label",
+                hintText: "e.g. Home, Office",
+                filled: true,
+                fillColor: const Color(0xFFF8F5FF),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                      color: Color(0xFF8B5CF6), width: 1.5),
+                ),
+              ),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: addressController,
-              decoration: const InputDecoration(labelText: "Address"),
+              decoration: InputDecoration(
+                labelText: "Address",
+                filled: true,
+                fillColor: const Color(0xFFF8F5FF),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                      color: Color(0xFF8B5CF6), width: 1.5),
+                ),
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text("Cancel",
+                style: TextStyle(color: Colors.grey[500])),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () async {
               await CustomerService.addAddress(
                 label: labelController.text,
                 address: addressController.text,
-                latitude: 21.2514, // TEMP
-                longitude: 81.6296, // TEMP
+                latitude: 21.2514,
+                longitude: 81.6296,
               );
-
               Navigator.pop(context);
               _loadAddresses();
             },
-            child: const Text("Save"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF8B5CF6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: const Text("Save",
+                style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -113,7 +159,9 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+      );
     }
 
     if (_profile == null) {
@@ -127,7 +175,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
           // HEADER
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 30, 20, 30),
+            padding: const EdgeInsets.fromLTRB(20, 36, 20, 32),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [Color(0xFF8B5CF6), Color(0xFFA855F7)],
@@ -135,34 +183,51 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
+                bottomLeft: Radius.circular(32),
+                bottomRight: Radius.circular(32),
               ),
             ),
             child: Column(
               children: [
+                // Avatar with subtle white ring
                 Container(
-                  padding: const EdgeInsets.all(22),
+                  padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.5),
+                      width: 2,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.person,
-                    size: 60,
-                    color: Colors.white,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.person,
+                      size: 60,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
                 Text(
                   _profile!['display_name'] ?? 'Add your name',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: _profile!['display_name'] != null
+                        ? Colors.white
+                        : Colors.white60,
                   ),
                 ),
+
                 const SizedBox(height: 6),
+
                 Text(
                   _profile!['email'],
                   style: const TextStyle(
@@ -170,11 +235,39 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                     color: Colors.white70,
                   ),
                 ),
+
+                const SizedBox(height: 14),
+
+                // Customer role pill
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified_user_rounded,
+                          color: Colors.white70, size: 14),
+                      SizedBox(width: 6),
+                      Text(
+                        "Customer",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
 
-          const SizedBox(height: 25),
+          const SizedBox(height: 24),
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -182,35 +275,40 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
               children: [
 
                 _buildInfoCard(
-                  icon: Icons.business,
+                  icon: Icons.business_rounded,
                   title: "Organization",
                   value: _profile!['organization'] ?? "Not added",
                   color: const Color(0xFF4F46E5),
+                  isValueMuted: _profile!['organization'] == null,
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
                 _buildAddressesCard(),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
+                // Logout — outlined instead of full red fill
                 SizedBox(
                   width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
+                  height: 54,
+                  child: OutlinedButton.icon(
                     onPressed: _logout,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF4444),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                    ),
-                    child: const Text(
+                    icon: const Icon(Icons.logout_rounded,
+                        color: Color(0xFFEF4444), size: 20),
+                    label: const Text(
                       "Logout",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Color(0xFFEF4444),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                          color: Colors.red.shade200, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ),
@@ -230,11 +328,11 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF8B5CF6).withOpacity(0.15),
-            blurRadius: 15,
+            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+            blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
@@ -243,29 +341,95 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
+          // Header row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Saved Addresses",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.location_on_rounded,
+                        color: Color(0xFF8B5CF6), size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    "Saved Addresses",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E1B3A),
+                    ),
+                  ),
+                ],
+              ),
+              // Add button — small pill
+              GestureDetector(
+                onTap: _openAddAddressDialog,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5CF6),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.add_rounded,
+                          color: Colors.white, size: 16),
+                      SizedBox(width: 4),
+                      Text(
+                        "Add",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.add, color: Color(0xFF8B5CF6)),
-                onPressed: _openAddAddressDialog,
-              )
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
 
           if (_loadingAddresses)
-            const Center(child: CircularProgressIndicator())
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: CircularProgressIndicator(
+                    color: Color(0xFF8B5CF6)),
+              ),
+            )
           else if (_addresses.isEmpty)
-            const Text("No addresses added yet")
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F5FF),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.location_off_rounded,
+                      color: Color(0xFFBBB0D6), size: 22),
+                  SizedBox(width: 12),
+                  Text(
+                    "No addresses added yet",
+                    style: TextStyle(
+                      color: Color(0xFFBBB0D6),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            )
           else
             Column(
               children: _addresses.map((addr) {
@@ -273,47 +437,82 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: isDefault
-                        ? const Color(0xFF8B5CF6).withOpacity(0.08)
-                        : Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
+                        ? const Color(0xFF8B5CF6).withOpacity(0.07)
+                        : const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(14),
+                    border: isDefault
+                        ? Border.all(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.25),
+                      width: 1.5,
+                    )
+                        : null,
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.location_on,
-                          color: Color(0xFF8B5CF6)),
+                      Icon(
+                        Icons.location_on_rounded,
+                        color: isDefault
+                            ? const Color(0xFF8B5CF6)
+                            : Colors.grey.shade400,
+                        size: 20,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              addr['label'] ?? "Address",
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold),
+                            Row(
+                              children: [
+                                Text(
+                                  addr['label'] ?? "Address",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Color(0xFF1E1B3A),
+                                  ),
+                                ),
+                                if (isDefault) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF8B5CF6)
+                                          .withOpacity(0.12),
+                                      borderRadius:
+                                      BorderRadius.circular(10),
+                                    ),
+                                    child: const Text(
+                                      "Default",
+                                      style: TextStyle(
+                                        color: Color(0xFF8B5CF6),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(addr['address'] ?? ""),
+                            const SizedBox(height: 3),
+                            Text(
+                              addr['address'] ?? "",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[500],
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      if (isDefault)
-                        const Text(
-                          "Default",
-                          style: TextStyle(
-                            color: Color(0xFF8B5CF6),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
                       IconButton(
-                        icon: const Icon(Icons.delete,
-                            color: Colors.redAccent),
-                        onPressed: () =>
-                            _deleteAddress(addr['id']),
-                      )
+                        icon: Icon(Icons.delete_outline_rounded,
+                            color: Colors.red.shade300, size: 20),
+                        onPressed: () => _deleteAddress(addr['id']),
+                      ),
                     ],
                   ),
                 );
@@ -329,16 +528,17 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
     required String title,
     required String value,
     required Color color,
+    bool isValueMuted = false,
   }) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.15),
-            blurRadius: 15,
+            color: color.withOpacity(0.1),
+            blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
@@ -353,7 +553,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
               ),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: Colors.white),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 18),
           Expanded(
@@ -363,16 +563,20 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                    fontSize: 13,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
+                    color: isValueMuted
+                        ? Colors.grey[400]
+                        : const Color(0xFF1E1B3A),
                   ),
                 ),
               ],
