@@ -446,49 +446,21 @@ class _JobCard extends StatelessWidget {
 
                 // Mark complete button
                 if (!isCompleted) ...[
-                  const SizedBox(height: 14),
-                  const Divider(height: 1, color: Color(0xFFF3F4F6)),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: isCompleting ? null : onComplete,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isCompleting
-                            ? Colors.grey.shade100
-                            : const Color(0xFF10B981),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(Icons.hourglass_top_rounded,
+                          color: Colors.amber.shade400, size: 15),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Waiting for customer to confirm completion",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.amber.shade600,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      child: isCompleting
-                          ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF10B981),
-                          strokeWidth: 2,
-                        ),
-                      )
-                          : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_circle_rounded,
-                              color: Colors.white, size: 18),
-                          SizedBox(width: 6),
-                          Text(
-                            "Mark Complete",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
                 ],
 

@@ -243,22 +243,20 @@ export const startJob = async (req, res) => {
 
 export const completeJob = async (req, res) => {
   try {
-    const workerId = req.user.userId;
+    const customerId = req.user.userId;
     const jobId = req.params.id;
 
     const [result] = await pool.execute(
       `UPDATE jobs
        SET status = 'completed'
        WHERE id = ?
-       AND accepted_by = ?
+       AND customer_id = ?
        AND status = 'in_progress'`,
-      [jobId, workerId]
+      [jobId, customerId]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(400).json({
-        message: "Cannot complete this job"
-      });
+      return res.status(400).json({ message: "Cannot complete this job" });
     }
 
     res.json({ message: "Job completed" });

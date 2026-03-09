@@ -96,4 +96,25 @@ class JobsService {
       throw Exception('Cancel failed');
     }
   }
+
+  /// ==============================
+  /// Complete JOB
+  /// ==============================
+
+
+  static Future<void> completeJob(String jobId) async {
+    final token = await SessionService.getToken();
+
+    final res = await http.put(
+      Uri.parse('$baseUrl/api/jobs/$jobId/complete'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Complete failed');
+    }
+  }
 }
+

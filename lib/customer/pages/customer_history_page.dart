@@ -11,7 +11,6 @@ class CustomerHistoryPage extends StatefulWidget {
 
 class _CustomerHistoryPageState extends State<CustomerHistoryPage>
     with SingleTickerProviderStateMixin {
-  // ── palette ───────────────────────────────────────────
   static const _violet = Color(0xFF8B5CF6);
   static const _violetMid = Color(0xFFA855F7);
   static const _violetSoft = Color(0xFFF3EEFF);
@@ -26,8 +25,8 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
   bool _loadingActive = true;
   bool _loadingPast = true;
 
-  // Which job's cancel is in-flight
   String? _cancellingId;
+  String? _completingId;
 
   @override
   void initState() {
@@ -92,21 +91,36 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
     setState(() => _cancellingId = null);
   }
 
+  Future<void> _completeJob(String id) async {
+    final confirmed = await _showCompleteDialog();
+    if (confirmed != true) return;
+
+    HapticFeedback.mediumImpact();
+    setState(() => _completingId = id);
+
+    try {
+      await JobsService.completeJob(id);
+      await Future.wait([_loadActive(), _loadPast()]);
+      if (!mounted) return;
+      _showSnack("Job marked as complete!", isError: false);
+    } catch (_) {
+      if (!mounted) return;
+      _showSnack("Could not complete job", isError: true);
+    }
+
+    if (!mounted) return;
+    setState(() => _completingId = null);
+  }
+
   Future<bool?> _showCancelDialog() {
     return showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           "Cancel this job?",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: _ink,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _ink),
         ),
         content: Text(
           "The job will be removed from active listings and workers won't be able to accept it.",
@@ -115,16 +129,41 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text("Keep it",
-                style: TextStyle(color: Colors.grey[500])),
+            child: Text("Keep it", style: TextStyle(color: Colors.grey[500])),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              "Cancel job",
-              style: TextStyle(
-                  color: Colors.redAccent, fontWeight: FontWeight.bold),
-            ),
+            child: const Text("Cancel job",
+                style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _showCompleteDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          "Mark job as complete?",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: _ink),
+        ),
+        content: Text(
+          "Confirm that the worker has finished the job to your satisfaction.",
+          style: TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text("Not yet", style: TextStyle(color: Colors.grey[500])),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Yes, complete",
+                style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -147,14 +186,11 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
         ),
         backgroundColor: isError ? Colors.redAccent : Colors.green,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
-  // ─── BUILD ────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -173,7 +209,6 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
     );
   }
 
-  // ── TAB BAR ───────────────────────────────────────────
   Widget _buildTabBar() {
     return Container(
       color: Colors.white,
@@ -205,14 +240,8 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
               dividerColor: Colors.transparent,
               labelColor: Colors.white,
               unselectedLabelColor: _violet,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
               padding: const EdgeInsets.all(4),
               tabs: [
                 Tab(
@@ -248,7 +277,6 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
     );
   }
 
-  // ── ACTIVE TAB ────────────────────────────────────────
   Widget _buildActiveTab() {
     if (_loadingActive) return _LoadingState();
     if (_activeJobs.isEmpty) {
@@ -269,20 +297,24 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
         itemCount: _activeJobs.length,
         itemBuilder: (_, i) {
           final job = _activeJobs[i];
-          final canCancel = job['status'] == 'open' ||
-              job['status'] == 'accepted';
+          final status = job['status'] as String? ?? 'open';
+          final canCancel = status == 'open' || status == 'accepted';
+          final canComplete = status == 'in_progress';
+
           return _JobCard(
             job: job,
             isCancelling: _cancellingId == job['id'],
+            isCompleting: _completingId == job['id'],
             showCancelButton: canCancel,
+            showCompleteButton: canComplete,
             onCancel: canCancel ? () => _cancelJob(job['id']) : null,
+            onComplete: canComplete ? () => _completeJob(job['id']) : null,
           );
         },
       ),
     );
   }
 
-  // ── HISTORY TAB ───────────────────────────────────────
   Widget _buildHistoryTab() {
     if (_loadingPast) return _LoadingState();
     if (_pastJobs.isEmpty) {
@@ -312,14 +344,20 @@ class _JobCard extends StatelessWidget {
   const _JobCard({
     required this.job,
     this.showCancelButton = false,
+    this.showCompleteButton = false,
     this.isCancelling = false,
+    this.isCompleting = false,
     this.onCancel,
+    this.onComplete,
   });
 
   final dynamic job;
   final bool showCancelButton;
+  final bool showCompleteButton;
   final bool isCancelling;
+  final bool isCompleting;
   final VoidCallback? onCancel;
+  final VoidCallback? onComplete;
 
   static const _violet = Color(0xFF8B5CF6);
   static const _ink = Color(0xFF1E1B3A);
@@ -334,9 +372,17 @@ class _JobCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: status == 'in_progress'
+            ? Border.all(
+          color: const Color(0xFF10B981).withOpacity(0.35),
+          width: 1.5,
+        )
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: status == 'in_progress'
+                ? const Color(0xFF10B981).withOpacity(0.08)
+                : Colors.black.withOpacity(0.05),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -344,7 +390,7 @@ class _JobCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ── TOP: status strip ──────────────────────
+          // ── STATUS STRIP ──────────────────────────
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
@@ -367,13 +413,28 @@ class _JobCard extends StatelessWidget {
                     letterSpacing: 0.3,
                   ),
                 ),
+                if (status == 'in_progress') ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      "Awaiting your confirmation",
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF10B981),
+                      ),
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 Text(
                   _formatDate(job['created_at']),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: cfg.color.withOpacity(0.7),
-                  ),
+                  style: TextStyle(fontSize: 11, color: cfg.color.withOpacity(0.7)),
                 ),
               ],
             ),
@@ -385,7 +446,6 @@ class _JobCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 Text(
                   job['title'] ?? 'Untitled',
                   style: const TextStyle(
@@ -400,8 +460,7 @@ class _JobCard extends StatelessWidget {
 
                 // Skill badge
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: _violet.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(20),
@@ -409,8 +468,7 @@ class _JobCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.handyman_rounded,
-                          color: _violet, size: 13),
+                      const Icon(Icons.handyman_rounded, color: _violet, size: 13),
                       const SizedBox(width: 5),
                       Text(
                         job['skill_name'] ?? '—',
@@ -424,7 +482,6 @@ class _JobCard extends StatelessWidget {
                   ),
                 ),
 
-                // Description if present
                 if (job['description'] != null &&
                     (job['description'] as String).isNotEmpty) ...[
                   const SizedBox(height: 10),
@@ -432,17 +489,61 @@ class _JobCard extends StatelessWidget {
                     job['description'],
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[500],
-                      height: 1.5,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[500], height: 1.5),
+                  ),
+                ],
+
+                // ── MARK COMPLETE button (in_progress) ──
+                if (showCompleteButton) ...[
+                  const SizedBox(height: 14),
+                  const Divider(height: 1, color: Color(0xFFF3F4F6)),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: isCompleting ? null : onComplete,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isCompleting
+                            ? Colors.grey.shade100
+                            : const Color(0xFF10B981),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: isCompleting
+                          ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF10B981),
+                        ),
+                      )
+                          : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_rounded,
+                              color: Colors.white, size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            "Mark as Complete",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
 
-                // Cancel button
+                // ── CANCEL button (open / accepted) ──
                 if (showCancelButton) ...[
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   const Divider(height: 1, color: Color(0xFFF3F4F6)),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -516,8 +617,8 @@ class _JobCard extends StatelessWidget {
         return _StatusConfig(
           label: 'IN PROGRESS',
           icon: Icons.pending_rounded,
-          color: const Color(0xFFF59E0B),
-          bgColor: const Color(0xFFFFFBEB),
+          color: const Color(0xFF10B981),
+          bgColor: const Color(0xFFECFDF5),
         );
       case 'completed':
         return _StatusConfig(
@@ -549,14 +650,12 @@ class _JobCard extends StatelessWidget {
       final dt = DateTime.parse(raw.toString()).toLocal();
       final now = DateTime.now();
       final diff = now.difference(dt);
-
       if (diff.inDays == 0) {
         if (diff.inHours == 0) return '${diff.inMinutes}m ago';
         return '${diff.inHours}h ago';
       }
       if (diff.inDays == 1) return 'Yesterday';
       if (diff.inDays < 7) return '${diff.inDays}d ago';
-
       return '${dt.day}/${dt.month}/${dt.year}';
     } catch (_) {
       return '';
@@ -631,8 +730,7 @@ class _Shimmer extends StatefulWidget {
   State<_Shimmer> createState() => _ShimmerState();
 }
 
-class _ShimmerState extends State<_Shimmer>
-    with SingleTickerProviderStateMixin {
+class _ShimmerState extends State<_Shimmer> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _anim;
 
@@ -705,8 +803,8 @@ class _EmptyState extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3EEFF),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF3EEFF),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 44, color: const Color(0xFF8B5CF6)),
@@ -724,11 +822,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-                height: 1.5,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500], height: 1.5),
             ),
           ],
         ),
