@@ -185,3 +185,26 @@ export const removeSkill = async (req, res) => {
 
   }
 };
+
+
+export const getAllSkills = async (req, res) => {
+  try {
+
+    const [rows] = await pool.execute(
+      `SELECT id, name
+       FROM skills
+       ORDER BY name ASC`
+    );
+
+    res.json(rows);
+
+  } catch (error) {
+
+    console.error("Get all skills error:", error);
+
+    res.status(500).json({
+      message: "Server error"
+    });
+
+  }
+};
