@@ -12,6 +12,17 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  http: ^1.6.0
+  flutter_secure_storage: ^10.0.0
+  flutter_dotenv: ^6.0.0
+  shared_preferences: ^2.5.3
+  jwt_decoder: ^2.0.1
+  permission_handler: ^12.0.1
+
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
+  geolocator: ^14.0.2
+
 
 dev_dependencies:
   flutter_test:
@@ -24,6 +35,7 @@ flutter:
 
   # ✅ ASSETS (REQUIRED FOR YOUR APP)
   assets:
+    - .env
     - assets/images/logo.png
     - assets/images/logo_2.png
 

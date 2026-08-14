@@ -1,0 +1,473 @@
+import { v4 as uuidv4 } from "uuid";
+import pool from "../config/db.js";
+
+/* ======================================================
+   CREATE JOB
+====================================================== */
+
+export const createJob = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { skill_id, address_id, title, description } = req.body;
+
+    if (!skill_id || !address_id || !title) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Get address lat/lng
+    const [addrRows] = await pool.execute(
+      `SELECT latitude, longitude
+       FROM customer_addresses
+       WHERE id = ? AND user_id = ?`,
+      [address_id, userId]
+    );
+
+    if (addrRows.length === 0) {
+      return res.status(400).json({ message: "Invalid address" });
+    }
+
+    const { latitude, longitude } = addrRows[0];
+
+    const jobId = uuidv4();
+
+    await pool.execute(
+      `INSERT INTO jobs
+       (id, customer_id, address_id, skill_id, title, description, latitude, longitude)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        jobId,
+        userId,
+        address_id,
+        skill_id,
+        title,
+        description || null,
+        latitude,
+        longitude
+      ]
+    );
+
+    res.json({ message: "Job created successfully" });
+
+  } catch (err) {
+    console.error("Create job error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+/* ======================================================
+   CUSTOMER HISTORY
+====================================================== */
+
+export const getMyActiveJobs = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const [rows] = await pool.execute(
+      `SELECT j.*, s.name AS skill_name
+       FROM jobs j
+       JOIN skills s ON j.skill_id = s.id
+       WHERE j.customer_id = ?
+       AND j.status IN ('open','accepted','in_progress')
+       ORDER BY j.created_at DESC`,
+      [userId]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Active jobs error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getMyPastJobs = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const [rows] = await pool.execute(
+      `SELECT j.*, s.name AS skill_name
+       FROM jobs j
+       JOIN skills s ON j.skill_id = s.id
+       WHERE j.customer_id = ?
+       AND j.status IN ('completed','cancelled')
+       ORDER BY j.created_at DESC`,
+      [userId]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Past jobs error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+/* ======================================================
+   CUSTOMER CANCEL JOB
+====================================================== */
+
+export const cancelJob = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const jobId = req.params.id;
+
+    const [result] = await pool.execute(
+      `UPDATE jobs
+       SET status = 'cancelled'
+       WHERE id = ?
+       AND customer_id = ?
+       AND status IN ('open','accepted')`,
+      [jobId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({
+        message: "Cannot cancel this job"
+      });
+    }
+
+    res.json({ message: "Job cancelled successfully" });
+
+  } catch (err) {
+    console.error("Cancel job error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+/* ======================================================
+   WORKER NEARBY JOBS
+   - Skill match
+   - Status = open
+   - Inside worker radius (Haversine formula)
+====================================================== */
+
+ export const getNearbyJobs = async (req, res) => {
+   try {
+     const workerId = req.user.userId;
+
+     const [rows] = await pool.execute(
+       `
+       SELECT
+         j.id,
+         j.title,
+         j.description,
+         j.status,
+         j.created_at,
+         s.name AS skill_name,
+         u.email AS customer_email,
+
+         CASE
+           WHEN ws.worker_id IS NOT NULL THEN 1
+           ELSE 0
+         END AS is_skill_match,
+
+         -- Use live location if available, else fall back to service area center
+         ROUND(
+           6371 * ACOS(
+             LEAST(1.0, GREATEST(-1.0,
+               COS(RADIANS(COALESCE(ul.latitude, wsa.center_lat))) *
+               COS(RADIANS(j.latitude)) *
+               COS(RADIANS(j.longitude) - RADIANS(COALESCE(ul.longitude, wsa.center_lng))) +
+               SIN(RADIANS(COALESCE(ul.latitude, wsa.center_lat))) *
+               SIN(RADIANS(j.latitude))
+             ))
+           ), 2
+         ) AS distance_km
+
+       FROM jobs j
+
+       JOIN skills s ON j.skill_id = s.id
+       JOIN users u ON j.customer_id = u.id
+       JOIN worker_service_areas wsa ON wsa.worker_id = ?
+
+       -- live location (may not exist)
+       LEFT JOIN user_locations ul ON ul.user_id = ?
+
+       LEFT JOIN worker_skills ws
+         ON ws.skill_id = j.skill_id
+         AND ws.worker_id = ?
+
+       WHERE j.status = 'open'
+       AND (
+         6371 * ACOS(
+           LEAST(1.0, GREATEST(-1.0,
+             COS(RADIANS(COALESCE(ul.latitude, wsa.center_lat))) *
+             COS(RADIANS(j.latitude)) *
+             COS(RADIANS(j.longitude) - RADIANS(COALESCE(ul.longitude, wsa.center_lng))) +
+             SIN(RADIANS(COALESCE(ul.latitude, wsa.center_lat))) *
+             SIN(RADIANS(j.latitude))
+           ))
+         )
+       ) <= wsa.radius_km
+
+       ORDER BY is_skill_match DESC, distance_km ASC
+       `,
+       [workerId, workerId, workerId]
+     );
+
+     res.json(rows);
+
+   } catch (err) {
+     console.error("Nearby jobs error:", err);
+     res.status(500).json({ message: "Server error" });
+   }
+ };
+
+/* ======================================================
+   ACCEPT JOB
+   - Only if status = open
+   - Prevent race condition
+====================================================== */
+
+export const startJob = async (req, res) => {
+  try {
+    const workerId = req.user.userId;
+    const jobId = req.params.id;
+
+    const [result] = await pool.execute(
+      `UPDATE jobs
+       SET status = 'in_progress',
+           accepted_by = ?
+       WHERE id = ?
+       AND status = 'open'`,
+      [workerId, jobId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({
+        message: "Job already taken or not available"
+      });
+    }
+
+    res.json({ message: "Job started successfully" });
+
+  } catch (err) {
+    console.error("Start job error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const completeJob = async (req, res) => {
+  try {
+    const customerId = req.user.userId;
+    const jobId = req.params.id;
+
+    const [result] = await pool.execute(
+      `UPDATE jobs
+       SET status = 'completed'
+       WHERE id = ?
+       AND customer_id = ?
+       AND status = 'in_progress'`,
+      [jobId, customerId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ message: "Cannot complete this job" });
+    }
+
+    res.json({ message: "Job completed" });
+
+  } catch (err) {
+    console.error("Complete job error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getWorkerActiveJobs = async (req, res) => {
+  try {
+    const workerId = req.user.userId;
+
+    const [rows] = await pool.execute(
+      `SELECT j.*, s.name AS skill_name
+       FROM jobs j
+       JOIN skills s ON j.skill_id = s.id
+       WHERE j.accepted_by = ?
+       AND j.status = 'in_progress'
+       ORDER BY j.created_at DESC`,
+      [workerId]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Active jobs error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const getWorkerCompletedJobs = async (req, res) => {
+  try {
+    const workerId = req.user.userId;
+
+    const [rows] = await pool.execute(
+      `SELECT j.*, s.name AS skill_name
+       FROM jobs j
+       JOIN skills s ON j.skill_id = s.id
+       WHERE j.accepted_by = ?
+       AND j.status = 'completed'
+       ORDER BY j.updated_at DESC`,
+      [workerId]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Completed jobs error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+
+
+export const searchJobs = async (req, res) => {
+  try {
+    const workerId = req.user.userId;
+    const { skill, lat, lng } = req.query;
+
+    if (!skill || !lat || !lng) {
+      return res.status(400).json({ message: "skill, lat, lng required" });
+    }
+
+    const [rows] = await pool.execute(
+      `
+      SELECT
+        j.id,
+        j.title,
+        j.description,
+        j.status,
+        j.created_at,
+        s.name AS skill_name,
+        u.email AS customer_email,
+
+        CASE
+          WHEN ws.worker_id IS NOT NULL THEN 1
+          ELSE 0
+        END AS is_skill_match,
+
+        ROUND(
+          6371 * ACOS(
+            LEAST(1.0, GREATEST(-1.0,
+              COS(RADIANS(?)) * COS(RADIANS(j.latitude)) *
+              COS(RADIANS(j.longitude) - RADIANS(?)) +
+              SIN(RADIANS(?)) * SIN(RADIANS(j.latitude))
+            ))
+          ), 2
+        ) AS distance_km
+
+      FROM jobs j
+      JOIN skills s ON j.skill_id = s.id
+      JOIN users u ON j.customer_id = u.id
+
+      LEFT JOIN worker_skills ws
+        ON ws.skill_id = j.skill_id
+        AND ws.worker_id = ?
+
+      WHERE j.status = 'open'
+        AND s.name LIKE ?
+        AND (
+          6371 * ACOS(
+            LEAST(1.0, GREATEST(-1.0,
+              COS(RADIANS(?)) * COS(RADIANS(j.latitude)) *
+              COS(RADIANS(j.longitude) - RADIANS(?)) +
+              SIN(RADIANS(?)) * SIN(RADIANS(j.latitude))
+            ))
+          )
+        ) <= 50
+
+      ORDER BY is_skill_match DESC, distance_km ASC
+      LIMIT 30
+      `,
+      [
+        parseFloat(lat), parseFloat(lng), parseFloat(lat),   // distance select
+        workerId,                                              // skill match check
+        `%${skill}%`,                                         // skill filter
+        parseFloat(lat), parseFloat(lng), parseFloat(lat),   // WHERE distance
+      ]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Search jobs error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getJobsForMap = async (req, res) => {
+  try {
+    const workerId = req.user.userId;
+    const { skill, lat, lng } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ message: "lat, lng required" });
+    }
+
+    const [rows] = await pool.execute(
+      `
+      SELECT
+        j.id,
+        j.title,
+        j.latitude,
+        j.longitude,
+        j.status,
+        s.name AS skill_name,
+        u.email AS customer_email,
+
+        CASE WHEN ws.worker_id IS NOT NULL THEN 1 ELSE 0 END AS is_skill_match,
+
+        ROUND(
+          6371 * ACOS(
+            LEAST(1.0, GREATEST(-1.0,
+              COS(RADIANS(?)) * COS(RADIANS(j.latitude)) *
+              COS(RADIANS(j.longitude) - RADIANS(?)) +
+              SIN(RADIANS(?)) * SIN(RADIANS(j.latitude))
+            ))
+          ), 2
+        ) AS distance_km
+
+      FROM jobs j
+      JOIN skills s ON j.skill_id = s.id
+      JOIN users u ON j.customer_id = u.id
+      LEFT JOIN worker_skills ws
+        ON ws.skill_id = j.skill_id AND ws.worker_id = ?
+
+      WHERE j.status = 'open'
+        ${skill ? "AND s.name LIKE ?" : ""}
+        AND (
+          6371 * ACOS(
+            LEAST(1.0, GREATEST(-1.0,
+              COS(RADIANS(?)) * COS(RADIANS(j.latitude)) *
+              COS(RADIANS(j.longitude) - RADIANS(?)) +
+              SIN(RADIANS(?)) * SIN(RADIANS(j.latitude))
+            ))
+          )
+        ) <= 50
+
+      ORDER BY is_skill_match DESC, distance_km ASC
+      LIMIT 50
+      `,
+      skill
+        ? [
+            parseFloat(lat), parseFloat(lng), parseFloat(lat),
+            workerId,
+            `%${skill}%`,
+            parseFloat(lat), parseFloat(lng), parseFloat(lat),
+          ]
+        : [
+            parseFloat(lat), parseFloat(lng), parseFloat(lat),
+            workerId,
+            parseFloat(lat), parseFloat(lng), parseFloat(lat),
+          ]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error("Map jobs error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
