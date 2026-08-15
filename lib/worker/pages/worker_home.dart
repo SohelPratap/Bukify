@@ -27,8 +27,8 @@ class _HomeWorkerPageState extends State<HomeWorkerPage>
 
   late AnimationController _fabController;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetMid = Color(0xFFA855F7);
+  static const _primary = Color(0xFF0072FF); // Navy/Dark Blue
+  static const _primaryMid = Color(0xFF00C6FF); // Bright Blue
 
   // Nav config
   static const _navItems = [
@@ -112,7 +112,7 @@ class _HomeWorkerPageState extends State<HomeWorkerPage>
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F5FF),
+      backgroundColor: const Color(0xFFF5FAFF),
       appBar: _buildAppBar(),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 220),
@@ -138,9 +138,9 @@ class _HomeWorkerPageState extends State<HomeWorkerPage>
       flexibleSpace: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF7C3AED), _violetMid],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [_primaryMid, _primary],
+            begin: Alignment.bottomLeft,
+            end: Alignment.topRight,
           ),
         ),
       ),
@@ -215,7 +215,7 @@ class _HomeWorkerPageState extends State<HomeWorkerPage>
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: _violet.withOpacity(0.10),
+            color: _primary.withOpacity(0.10),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -244,14 +244,14 @@ class _HomeWorkerPageState extends State<HomeWorkerPage>
                     height: 46,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF7C3AED), _violetMid],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        colors: [_primaryMid, _primary],
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.topRight,
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: _violet.withOpacity(isActive ? 0.4 : 0.2),
+                          color: _primary.withOpacity(isActive ? 0.4 : 0.2),
                           blurRadius: isActive ? 14 : 6,
                           offset: const Offset(0, 3),
                         ),
@@ -274,7 +274,7 @@ class _HomeWorkerPageState extends State<HomeWorkerPage>
                       horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? _violet.withOpacity(0.09)
+                        ? _primary.withOpacity(0.09)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -283,7 +283,7 @@ class _HomeWorkerPageState extends State<HomeWorkerPage>
                     children: [
                       Icon(
                         item.icon,
-                        color: isActive ? _violet : Colors.grey.shade400,
+                        color: isActive ? _primary : Colors.grey.shade400,
                         size: 20,
                       ),
                       const SizedBox(height: 2),
@@ -295,7 +295,7 @@ class _HomeWorkerPageState extends State<HomeWorkerPage>
                               ? FontWeight.bold
                               : FontWeight.w500,
                           color: isActive
-                              ? _violet
+                              ? _primary
                               : Colors.grey.shade400,
                         ),
                         child: Text(item.label),

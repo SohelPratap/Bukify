@@ -22,6 +22,13 @@ class _SplashPageState extends State<SplashPage>
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
 
+  // ===== Brand Colors =====
+// ===== Brand Colors =====
+  static const Color gradientStart = Color(0xFF00C6FF); // Bright Blue
+  static const Color gradientEnd = Color(0xFF0072FF);   // Navy/Dark Blue
+  static const Color brandNameColor = Color(0xFF0F2C59); // Deep Slate Navy
+  static const Color taglineColor = Color(0xFF5C6B73);   // Cool Muted Gray
+
   @override
   void initState() {
     super.initState();
@@ -102,14 +109,15 @@ class _SplashPageState extends State<SplashPage>
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF8B5CF6), Color(0xFFA855F7)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [gradientStart, gradientEnd],
+            begin: Alignment.bottomLeft,
+            end: Alignment.topRight,
           ),
         ),
         child: SafeArea(
           child: Stack(
             children: [
+              // Decorative circle - top right
               Positioned(
                 top: -100,
                 right: -100,
@@ -118,10 +126,11 @@ class _SplashPageState extends State<SplashPage>
                   height: 300,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withOpacity(0.08),
                   ),
                 ),
               ),
+              // Decorative circle - bottom left
               Positioned(
                 bottom: -150,
                 left: -100,
@@ -130,7 +139,20 @@ class _SplashPageState extends State<SplashPage>
                   height: 350,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withOpacity(0.08),
+                  ),
+                ),
+              ),
+              // Extra subtle circle for depth
+              Positioned(
+                top: 120,
+                left: -60,
+                child: Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.06),
                   ),
                 ),
               ),
@@ -139,93 +161,84 @@ class _SplashPageState extends State<SplashPage>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // Logo
                     ScaleTransition(
                       scale: _scaleAnimation,
                       child: Container(
-                        width: 110,
-                        height: 110,
-                        padding: const EdgeInsets.all(1),
+                        width: 120,
+                        height: 120,
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withOpacity(0.25),
                               blurRadius: 30,
-                              offset: const Offset(0, 10),
+                              offset: const Offset(0, 12),
                             ),
                           ],
                         ),
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          fit: BoxFit.contain,
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/new_main_logo.png',
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 40),
-
-                    ScaleTransition(
-                      scale: _scaleAnimation,
-                      child: const Text(
-                        "BukiFy",
-                        style: TextStyle(
-                          fontSize: 42,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 50),
 
                     FadeTransition(
                       opacity: _fadeAnimation,
-                      child: const Column(
-                        children: [
-                          Text(
-                            "Welcome to",
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white70,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            "Service provider app",
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white60,
-                            ),
-                          ),
-                        ],
+                      child: const Text(
+                        "Welcome to your all-in-one\nservice provider app",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          height: 1.5,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
                     ),
 
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 50),
 
+                    // Get Started button
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: ElevatedButton(
                         onPressed: _goToLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF8B5CF6),
+                          foregroundColor: gradientEnd,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 50,
+                            horizontal: 54,
                             vertical: 16,
                           ),
+                          elevation: 6,
+                          shadowColor: Colors.black.withOpacity(0.3),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Text(
-                          "Get Started",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              "Get Started",
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(Icons.arrow_forward_rounded,
+                                size: 18, color: gradientEnd),
+                          ],
                         ),
                       ),
                     ),

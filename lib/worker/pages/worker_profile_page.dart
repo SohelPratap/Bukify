@@ -20,11 +20,11 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
   @override
   bool get wantKeepAlive => true;
 
-  // ── palette ───────────────────────────────────────────
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetMid = Color(0xFFA855F7);
-  static const _violetSoft = Color(0xFFF3EEFF);
-  static const _ink = Color(0xFF1E1B3A);
+  // ── palette (brand blue) ─────────────────────────────
+  static const _primary = Color(0xFF0072FF); // Navy/Dark Blue
+  static const _primaryMid = Color(0xFF00C6FF); // Bright Blue
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
 
   Map<String, dynamic>? _profile;
   bool _loading = true;
@@ -239,7 +239,7 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
 
     if (_loading) {
       return const Center(
-        child: CircularProgressIndicator(color: _violet),
+        child: CircularProgressIndicator(color: _primary),
       );
     }
 
@@ -257,9 +257,9 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
             padding: const EdgeInsets.fromLTRB(20, 36, 20, 32),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF7C3AED), _violetMid],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                colors: [_primaryMid, _primary],
+                begin: Alignment.bottomLeft,
+                end: Alignment.topRight,
               ),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(32),
@@ -467,7 +467,7 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: _violet.withOpacity(0.1),
+            color: _primary.withOpacity(0.1),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -486,11 +486,11 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: _violet.withOpacity(0.1),
+                      color: _primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.handyman_rounded,
-                        color: _violet, size: 18),
+                        color: _primary, size: 18),
                   ),
                   const SizedBox(width: 10),
                   const Text(
@@ -511,21 +511,21 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
                   decoration: BoxDecoration(
                     color: _editSkills
                         ? Colors.grey.shade100
-                        : _violetSoft,
+                        : _primarySoft,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         _editSkills ? Icons.close_rounded : Icons.edit_rounded,
-                        color: _editSkills ? Colors.grey : _violet,
+                        color: _editSkills ? Colors.grey : _primary,
                         size: 14,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _editSkills ? "Done" : "Edit",
                         style: TextStyle(
-                          color: _editSkills ? Colors.grey : _violet,
+                          color: _editSkills ? Colors.grey : _primary,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -545,18 +545,18 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
             padding: const EdgeInsets.symmetric(
                 horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F5FF),
+              color: const Color(0xFFF0F8FF),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Row(
               children: [
                 Icon(Icons.info_outline_rounded,
-                    color: Color(0xFFBBB0D6), size: 18),
+                    color: Color(0xFFA8C9E8), size: 18),
                 SizedBox(width: 10),
                 Text(
                   "No skills added yet",
                   style: TextStyle(
-                    color: Color(0xFFBBB0D6),
+                    color: Color(0xFFA8C9E8),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -605,7 +605,7 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: approved
-                                  ? const Color(0xFF1E1B3A)
+                                  ? _ink
                                   : Colors.grey[600],
                             ),
                           ),
@@ -667,7 +667,7 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: _violet,
+                      color: _primary,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Row(
@@ -704,7 +704,7 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: _violet.withOpacity(0.1),
+            color: _primary.withOpacity(0.1),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -720,11 +720,11 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _violet.withOpacity(0.1),
+                  color: _primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.radar_rounded,
-                    color: _violet, size: 18),
+                    color: _primary, size: 18),
               ),
               const SizedBox(width: 10),
               const Text(
@@ -740,7 +740,7 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: _violetSoft,
+                  color: _primarySoft,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -748,7 +748,7 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: _violet,
+                    color: _primary,
                   ),
                 ),
               ),
@@ -760,10 +760,10 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
           // Slider
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
-              activeTrackColor: _violet,
-              inactiveTrackColor: _violetSoft,
-              thumbColor: _violet,
-              overlayColor: _violet.withOpacity(0.15),
+              activeTrackColor: _primary,
+              inactiveTrackColor: _primarySoft,
+              thumbColor: _primary,
+              overlayColor: _primary.withOpacity(0.15),
               trackHeight: 4,
               thumbShape: const RoundSliderThumbShape(
                   enabledThumbRadius: 8),
@@ -799,7 +799,7 @@ class WorkerProfilePageState extends State<WorkerProfilePage>
             child: ElevatedButton(
               onPressed: _savingRadius ? null : _saveServiceArea,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _violet,
+                backgroundColor: _primary,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),

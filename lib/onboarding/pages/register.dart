@@ -21,6 +21,11 @@ class _RegisterPageState extends State<RegisterPage> {
 
   String _role = 'customer'; // default
   bool _loading = false;
+  bool _obscurePassword = true;
+
+  // ===== Brand Colors =====
+  static const Color gradientStart = Color(0xFF00C6FF); // Bright Blue
+  static const Color gradientEnd = Color(0xFF0072FF);   // Navy/Dark Blue
 
   @override
   void dispose() {
@@ -85,6 +90,59 @@ class _RegisterPageState extends State<RegisterPage> {
       SnackBar(
         content: Text(msg),
         backgroundColor: Colors.red[400],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleCard({
+    required String value,
+    required String label,
+    required IconData icon,
+  }) {
+    final bool selected = _role == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _role = value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          decoration: BoxDecoration(
+            gradient: selected
+                ? const LinearGradient(
+              colors: [gradientStart, gradientEnd],
+              begin: Alignment.bottomLeft,
+              end: Alignment.topRight,
+            )
+                : null,
+            color: selected ? null : Colors.grey[50],
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: selected ? Colors.transparent : Colors.grey[300]!,
+              width: 1.2,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: selected ? Colors.white : Colors.grey[500],
+                size: 26,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? Colors.white : Colors.grey[700],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -95,9 +153,9 @@ class _RegisterPageState extends State<RegisterPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF8B5CF6), Color(0xFFA855F7)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [gradientStart, gradientEnd],
+            begin: Alignment.bottomLeft,
+            end: Alignment.topRight,
           ),
         ),
         child: SafeArea(
@@ -123,14 +181,20 @@ class _RegisterPageState extends State<RegisterPage> {
                         Center(
                           child: Container(
                             padding: const EdgeInsets.all(20),
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Color(0xFF8B5CF6),
-                                  Color(0xFFA855F7),
-                                ],
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [gradientStart, gradientEnd],
+                                begin: Alignment.bottomLeft,
+                                end: Alignment.topRight,
                               ),
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: gradientEnd.withOpacity(0.35),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
                             ),
                             child: const Icon(
                               Icons.person_add_alt_1,
@@ -148,6 +212,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F2C59),
                           ),
                         ),
 
@@ -169,12 +234,16 @@ class _RegisterPageState extends State<RegisterPage> {
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             labelText: "Email",
-                            prefixIcon: const Icon(Icons.email_outlined),
+                            prefixIcon: const Icon(Icons.email_outlined, color: gradientEnd),
                             filled: true,
                             fillColor: Colors.grey[50],
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(15),
                               borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              borderSide: const BorderSide(color: gradientEnd, width: 1.5),
                             ),
                           ),
                         ),
@@ -183,15 +252,30 @@ class _RegisterPageState extends State<RegisterPage> {
 
                         TextField(
                           controller: _passwordController,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             labelText: "Password",
-                            prefixIcon: const Icon(Icons.lock_outline),
+                            prefixIcon: const Icon(Icons.lock_outline, color: gradientEnd),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: Colors.grey[500],
+                              ),
+                              onPressed: () {
+                                setState(() => _obscurePassword = !_obscurePassword);
+                              },
+                            ),
                             filled: true,
                             fillColor: Colors.grey[50],
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(15),
                               borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              borderSide: const BorderSide(color: gradientEnd, width: 1.5),
                             ),
                           ),
                         ),
@@ -203,32 +287,24 @@ class _RegisterPageState extends State<RegisterPage> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F2C59),
                           ),
                         ),
 
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
 
                         Row(
                           children: [
-                            Expanded(
-                              child: RadioListTile<String>(
-                                value: 'customer',
-                                groupValue: _role,
-                                onChanged: (val) {
-                                  setState(() => _role = val!);
-                                },
-                                title: const Text("Customer"),
-                              ),
+                            _buildRoleCard(
+                              value: 'customer',
+                              label: 'Customer',
+                              icon: Icons.person_outline,
                             ),
-                            Expanded(
-                              child: RadioListTile<String>(
-                                value: 'worker',
-                                groupValue: _role,
-                                onChanged: (val) {
-                                  setState(() => _role = val!);
-                                },
-                                title: const Text("Worker"),
-                              ),
+                            const SizedBox(width: 14),
+                            _buildRoleCard(
+                              value: 'worker',
+                              label: 'Worker',
+                              icon: Icons.engineering_outlined,
                             ),
                           ],
                         ),
@@ -237,24 +313,42 @@ class _RegisterPageState extends State<RegisterPage> {
 
                         SizedBox(
                           height: 56,
-                          child: ElevatedButton(
-                            onPressed: _loading ? null : _register,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF8B5CF6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [gradientStart, gradientEnd],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
                               ),
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: gradientEnd.withOpacity(0.35),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                             ),
-                            child: _loading
-                                ? const CircularProgressIndicator(
-                              color: Colors.white,
-                            )
-                                : const Text(
-                              "Register",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            child: ElevatedButton(
+                              onPressed: _loading ? null : _register,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                              child: _loading
+                                  ? const CircularProgressIndicator(
                                 color: Colors.white,
+                              )
+                                  : const Text(
+                                "Register",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -265,7 +359,10 @@ class _RegisterPageState extends State<RegisterPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("Already have an account? "),
+                            Text(
+                              "Already have an account? ",
+                              style: TextStyle(color: Colors.grey[700]),
+                            ),
                             TextButton(
                               onPressed: () {
                                 Navigator.pushReplacement(
@@ -275,7 +372,13 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),
                                 );
                               },
-                              child: const Text("Login"),
+                              style: TextButton.styleFrom(
+                                foregroundColor: gradientEnd,
+                              ),
+                              child: const Text(
+                                "Login",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ],
                         ),

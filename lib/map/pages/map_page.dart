@@ -25,10 +25,11 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetMid = Color(0xFFA855F7);
-  static const _violetSoft = Color(0xFFF3EEFF);
-  static const _ink = Color(0xFF1E1B3A);
+  // ── palette (brand blue) ─────────────────────────────
+  static const _primary = Color(0xFF0072FF); // Navy/Dark Blue
+  static const _primaryMid = Color(0xFF00C6FF); // Bright Blue
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
 
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
@@ -229,12 +230,12 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           angle: -_mapRotation * math.pi / 180,
           child: Container(
             decoration: BoxDecoration(
-              color: _violet,
+              color: _primary,
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2.5),
               boxShadow: [
                 BoxShadow(
-                  color: _violet.withOpacity(0.4),
+                  color: _primary.withOpacity(0.4),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
@@ -264,7 +265,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
         markerColor = isOnline ? const Color(0xFF10B981) : Colors.grey;
         markerIcon = Icons.person_rounded;
       } else {
-        markerColor = isMatch ? _violet : const Color(0xFFF59E0B);
+        markerColor = isMatch ? _primary : const Color(0xFFF59E0B);
         markerIcon = Icons.work_rounded;
       }
 
@@ -306,16 +307,16 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     if (_currentLocation == null) {
       return Container(
-        color: _violetSoft,
+        color: _primarySoft,
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: _violet),
+              CircularProgressIndicator(color: _primary),
               SizedBox(height: 16),
               Text("Getting your location…",
                   style: TextStyle(
-                      color: _violet, fontWeight: FontWeight.w500)),
+                      color: _primary, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
@@ -357,8 +358,8 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                       point: widget.serviceCenter ?? _currentLocation!,
                       radius: widget.serviceRadius! * 1000,
                       useRadiusInMeter: true,
-                      color: _violet.withOpacity(0.08),
-                      borderColor: _violet.withOpacity(0.4),
+                      color: _primary.withOpacity(0.08),
+                      borderColor: _primary.withOpacity(0.4),
                       borderStrokeWidth: 1.5,
                     ),
                   ],
@@ -392,11 +393,15 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _violet,
+                    gradient: const LinearGradient(
+                      colors: [_primaryMid, _primary],
+                      begin: Alignment.bottomLeft,
+                      end: Alignment.topRight,
+                    ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: _violet.withOpacity(0.35),
+                        color: _primary.withOpacity(0.35),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -487,7 +492,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                   ],
                 ),
                 child: const Icon(Icons.my_location_rounded,
-                    color: _violet, size: 20),
+                    color: _primary, size: 20),
               ),
             ),
           ),
@@ -531,7 +536,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               : "Search jobs by skill…",
           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
           prefixIcon: Icon(Icons.search_rounded,
-              color: _violet.withOpacity(0.7), size: 20),
+              color: _primary.withOpacity(0.7), size: 20),
           suffixIcon: _searching
               ? const Padding(
             padding: EdgeInsets.all(12),
@@ -539,7 +544,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
               width: 18,
               height: 18,
               child: CircularProgressIndicator(
-                  strokeWidth: 2, color: _violet),
+                  strokeWidth: 2, color: _primary),
             ),
           )
               : _searchController.text.isNotEmpty
@@ -555,7 +560,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           )
               : IconButton(
             icon: Icon(Icons.arrow_forward_rounded,
-                color: _violet, size: 18),
+                color: _primary, size: 18),
             onPressed: () {
               _searchFocusNode.unfocus();
               _loadMarkers(
@@ -572,7 +577,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: _violet, width: 1.5),
+            borderSide: const BorderSide(color: _primary, width: 1.5),
           ),
         ),
       ),
@@ -613,7 +618,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                         Container(
                           padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                            color: _violet.withOpacity(0.08),
+                            color: _primary.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -621,7 +626,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                                 ? Icons.person_search
                                 : Icons.work_outline,
                             size: 14,
-                            color: _violet,
+                            color: _primary,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -704,9 +709,9 @@ class _WorkerInfoCard extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onViewProfile;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetMid = Color(0xFFA855F7);
-  static const _ink = Color(0xFF1E1B3A);
+  static const _primary = Color(0xFF0072FF);
+  static const _primaryMid = Color(0xFF00C6FF);
+  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
@@ -739,9 +744,9 @@ class _WorkerInfoCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF7C3AED), _violetMid],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                colors: [_primaryMid, _primary],
+                begin: Alignment.bottomLeft,
+                end: Alignment.topRight,
               ),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(22),
@@ -851,7 +856,7 @@ class _WorkerInfoCard extends StatelessWidget {
                     _StatPill(
                         icon: Icons.near_me_rounded,
                         label: "${distance.toStringAsFixed(1)} km",
-                        color: _violet),
+                        color: _primary),
                   ],
                 ),
                 if (skillsList.isNotEmpty) ...[
@@ -866,7 +871,7 @@ class _WorkerInfoCard extends StatelessWidget {
                           skillsList,
                           style: TextStyle(
                             fontSize: 12,
-                            color: _violet.withOpacity(0.8),
+                            color: _primary.withOpacity(0.8),
                             fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
@@ -883,7 +888,7 @@ class _WorkerInfoCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onViewProfile,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _violet,
+                      backgroundColor: _primary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
@@ -938,9 +943,9 @@ class _JobInfoCard extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onStart;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetSoft = Color(0xFFF3EEFF);
-  static const _ink = Color(0xFF1E1B3A);
+  static const _primary = Color(0xFF0072FF);
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
@@ -953,7 +958,7 @@ class _JobInfoCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: isMatch
-            ? Border.all(color: _violet.withOpacity(0.3), width: 1.5)
+            ? Border.all(color: _primary.withOpacity(0.3), width: 1.5)
             : null,
         boxShadow: [
           BoxShadow(
@@ -970,7 +975,7 @@ class _JobInfoCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
             decoration: BoxDecoration(
-              color: isMatch ? _violetSoft : Colors.grey.shade50,
+              color: isMatch ? _primarySoft : Colors.grey.shade50,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(22),
                 topRight: Radius.circular(22),
@@ -984,10 +989,7 @@ class _JobInfoCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isMatch
-                          ? [
-                        const Color(0xFF7C3AED),
-                        const Color(0xFFA855F7)
-                      ]
+                          ? [const Color(0xFF00C6FF), const Color(0xFF0072FF)]
                           : [
                         Colors.orange.shade400,
                         Colors.orange.shade600
@@ -1025,7 +1027,7 @@ class _JobInfoCard extends StatelessWidget {
                             item['skill_name'] ?? '—',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isMatch ? _violet : Colors.grey[500],
+                              color: isMatch ? _primary : Colors.grey[500],
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1040,7 +1042,7 @@ class _JobInfoCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _violet,
+                      color: _primary,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Row(
@@ -1083,7 +1085,7 @@ class _JobInfoCard extends StatelessWidget {
                     _StatPill(
                         icon: Icons.near_me_rounded,
                         label: "${distance.toStringAsFixed(1)} km away",
-                        color: _violet),
+                        color: _primary),
                     const SizedBox(width: 8),
                     _StatPill(
                         icon: Icons.person_outline_rounded,
@@ -1102,7 +1104,7 @@ class _JobInfoCard extends StatelessWidget {
                     onPressed: isStarting ? null : onStart,
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
-                      isStarting ? Colors.grey.shade200 : _violet,
+                      isStarting ? Colors.grey.shade200 : _primary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
@@ -1112,7 +1114,7 @@ class _JobInfoCard extends StatelessWidget {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            color: _violet, strokeWidth: 2.5))
+                            color: _primary, strokeWidth: 2.5))
                         : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

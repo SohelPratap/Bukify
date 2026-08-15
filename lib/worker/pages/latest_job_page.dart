@@ -10,10 +10,10 @@ class LatestJobsPage extends StatefulWidget {
 }
 
 class _LatestJobsPageState extends State<LatestJobsPage> {
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetSoft = Color(0xFFF3EEFF);
-  static const _ink = Color(0xFF1E1B3A);
-  static const _bg = Color(0xFFF8F5FF);
+  static const _primary = Color(0xFF0072FF);
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
+  static const _bg = Color(0xFFF5FAFF);
 
   List<dynamic> _jobs = [];
   bool _loading = true;
@@ -91,7 +91,7 @@ class _LatestJobsPageState extends State<LatestJobsPage> {
     if (_loading) return _buildShimmer();
 
     return RefreshIndicator(
-      color: _violet,
+      color: _primary,
       onRefresh: _loadJobs,
       child: _jobs.isEmpty
           ? _buildEmptyState()
@@ -149,13 +149,13 @@ class _LatestJobsPageState extends State<LatestJobsPage> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: const BoxDecoration(
-                      color: _violetSoft,
+                      color: _primarySoft,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.location_searching_rounded,
                       size: 44,
-                      color: _violet,
+                      color: _primary,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -205,9 +205,9 @@ class _JobCard extends StatelessWidget {
   final bool isStarting;
   final VoidCallback? onStart;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetSoft = Color(0xFFF3EEFF);
-  static const _ink = Color(0xFF1E1B3A);
+  static const _primary = Color(0xFF0072FF);
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
@@ -218,14 +218,14 @@ class _JobCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: isMatch
             ? Border.all(
-          color: _violet.withOpacity(0.3),
+          color: _primary.withOpacity(0.3),
           width: 1.5,
         )
             : null,
         boxShadow: [
           BoxShadow(
             color: isMatch
-                ? _violet.withOpacity(0.1)
+                ? _primary.withOpacity(0.1)
                 : Colors.black.withOpacity(0.05),
             blurRadius: 14,
             offset: const Offset(0, 4),
@@ -239,7 +239,7 @@ class _JobCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: isMatch ? _violetSoft : Colors.grey.shade50,
+              color: isMatch ? _primarySoft : Colors.grey.shade50,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -252,7 +252,7 @@ class _JobCard extends StatelessWidget {
                       horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: isMatch
-                        ? _violet.withOpacity(0.12)
+                        ? _primary.withOpacity(0.12)
                         : Colors.grey.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -261,14 +261,14 @@ class _JobCard extends StatelessWidget {
                     children: [
                       Icon(Icons.handyman_rounded,
                           size: 12,
-                          color: isMatch ? _violet : Colors.grey),
+                          color: isMatch ? _primary : Colors.grey),
                       const SizedBox(width: 5),
                       Text(
                         job['skill_name'] ?? '—',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isMatch ? _violet : Colors.grey[600],
+                          color: isMatch ? _primary : Colors.grey[600],
                         ),
                       ),
                     ],
@@ -282,7 +282,7 @@ class _JobCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _violet,
+                      color: _primary,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Row(
@@ -390,7 +390,7 @@ class _JobCard extends StatelessWidget {
                     onPressed: onStart,
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
-                      isStarting ? Colors.grey.shade200 : _violet,
+                      isStarting ? Colors.grey.shade200 : _primary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -401,7 +401,7 @@ class _JobCard extends StatelessWidget {
                       height: 18,
                       width: 18,
                       child: CircularProgressIndicator(
-                        color: _violet,
+                        color: _primary,
                         strokeWidth: 2,
                       ),
                     )
@@ -478,7 +478,7 @@ class _ShimmerBoxState extends State<_ShimmerBox>
             ],
             colors: const [
               Color(0xFFF3F4F6),
-              Color(0xFFE9E4F5),
+              Color(0xFFDCEEFC),
               Color(0xFFF3F4F6),
             ],
           ),

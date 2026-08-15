@@ -13,10 +13,10 @@ class WorkerSearchPage extends StatefulWidget {
 }
 
 class _WorkerSearchPageState extends State<WorkerSearchPage> {
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetSoft = Color(0xFFF3EEFF);
-  static const _ink = Color(0xFF1E1B3A);
-  static const _bg = Color(0xFFF8F5FF);
+  static const _primary = Color(0xFF0072FF);
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
+  static const _bg = Color(0xFFF5FAFF);
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -226,7 +226,7 @@ class _WorkerSearchPageState extends State<WorkerSearchPage> {
               hintText: "Search jobs by skill…",
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
               prefixIcon: Icon(Icons.search_rounded,
-                  color: _violet.withOpacity(0.7), size: 22),
+                  color: _primary.withOpacity(0.7), size: 22),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
                 icon: const Icon(Icons.close_rounded,
@@ -243,11 +243,11 @@ class _WorkerSearchPageState extends State<WorkerSearchPage> {
               )
                   : IconButton(
                 icon: Icon(Icons.arrow_forward_rounded,
-                    color: _violet, size: 20),
+                    color: _primary, size: 20),
                 onPressed: () => _search(_searchController.text),
               ),
               filled: true,
-              fillColor: const Color(0xFFF8F5FF),
+              fillColor: const Color(0xFFF5FAFF),
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 18, vertical: 14),
               border: OutlineInputBorder(
@@ -256,7 +256,7 @@ class _WorkerSearchPageState extends State<WorkerSearchPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: _violet, width: 1.5),
+                borderSide: const BorderSide(color: _primary, width: 1.5),
               ),
             ),
           ),
@@ -278,7 +278,7 @@ class _WorkerSearchPageState extends State<WorkerSearchPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: _violet),
+            CircularProgressIndicator(color: _primary),
             SizedBox(height: 16),
             Text("Getting your location…",
                 style: TextStyle(color: Colors.grey)),
@@ -337,7 +337,7 @@ class _WorkerSearchPageState extends State<WorkerSearchPage> {
     }
 
     return RefreshIndicator(
-      color: _violet,
+      color: _primary,
       onRefresh: () => _search(_searchController.text),
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -380,9 +380,9 @@ class _JobSearchCard extends StatelessWidget {
   final bool isStarting;
   final VoidCallback? onStart;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetSoft = Color(0xFFF3EEFF);
-  static const _ink = Color(0xFF1E1B3A);
+  static const _primary = Color(0xFF0072FF);
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
@@ -392,12 +392,12 @@ class _JobSearchCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: isMatch
-            ? Border.all(color: _violet.withOpacity(0.3), width: 1.5)
+            ? Border.all(color: _primary.withOpacity(0.3), width: 1.5)
             : null,
         boxShadow: [
           BoxShadow(
             color: isMatch
-                ? _violet.withOpacity(0.1)
+                ? _primary.withOpacity(0.1)
                 : Colors.black.withOpacity(0.05),
             blurRadius: 14,
             offset: const Offset(0, 4),
@@ -411,7 +411,7 @@ class _JobSearchCard extends StatelessWidget {
             padding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: isMatch ? _violetSoft : Colors.grey.shade50,
+              color: isMatch ? _primarySoft : Colors.grey.shade50,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -424,7 +424,7 @@ class _JobSearchCard extends StatelessWidget {
                       horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: isMatch
-                        ? _violet.withOpacity(0.12)
+                        ? _primary.withOpacity(0.12)
                         : Colors.grey.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -433,14 +433,14 @@ class _JobSearchCard extends StatelessWidget {
                     children: [
                       Icon(Icons.handyman_rounded,
                           size: 12,
-                          color: isMatch ? _violet : Colors.grey),
+                          color: isMatch ? _primary : Colors.grey),
                       const SizedBox(width: 5),
                       Text(
                         job['skill_name'] ?? '—',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isMatch ? _violet : Colors.grey[600],
+                          color: isMatch ? _primary : Colors.grey[600],
                         ),
                       ),
                     ],
@@ -452,7 +452,7 @@ class _JobSearchCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _violet,
+                      color: _primary,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Row(
@@ -530,12 +530,12 @@ class _JobSearchCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     Icon(Icons.near_me_rounded,
-                        size: 13, color: _violet.withOpacity(0.6)),
+                        size: 13, color: _primary.withOpacity(0.6)),
                     const SizedBox(width: 4),
                     Text("${distance.toStringAsFixed(1)} km away",
                         style: TextStyle(
                             fontSize: 12,
-                            color: _violet.withOpacity(0.8),
+                            color: _primary.withOpacity(0.8),
                             fontWeight: FontWeight.w600)),
                   ],
                 ),
@@ -549,7 +549,7 @@ class _JobSearchCard extends StatelessWidget {
                     onPressed: onStart,
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
-                      isStarting ? Colors.grey.shade200 : _violet,
+                      isStarting ? Colors.grey.shade200 : _primary,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
@@ -559,7 +559,7 @@ class _JobSearchCard extends StatelessWidget {
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
-                            color: _violet, strokeWidth: 2))
+                            color: _primary, strokeWidth: 2))
                         : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -598,8 +598,8 @@ class _AutocompleteDropdown extends StatelessWidget {
   final IconData icon;
   final ValueChanged<String> onSelect;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _ink = Color(0xFF1E1B3A);
+  static const _primary = Color(0xFF0072FF);
+  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
@@ -635,9 +635,9 @@ class _AutocompleteDropdown extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                              color: _violet.withOpacity(0.08),
+                              color: _primary.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(8)),
-                          child: Icon(icon, size: 14, color: _violet),
+                          child: Icon(icon, size: 14, color: _primary),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -711,7 +711,7 @@ class _ShimmerCardState extends State<_ShimmerCard>
             ],
             colors: const [
               Color(0xFFF3F4F6),
-              Color(0xFFE9E4F5),
+              Color(0xFFDCEEFC),
               Color(0xFFF3F4F6),
             ],
           ),
@@ -743,16 +743,16 @@ class _EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(
-                  color: Color(0xFFF3EEFF), shape: BoxShape.circle),
+                  color: Color(0xFFE6F4FF), shape: BoxShape.circle),
               child:
-              Icon(icon, size: 44, color: const Color(0xFF8B5CF6)),
+              Icon(icon, size: 44, color: const Color(0xFF0072FF)),
             ),
             const SizedBox(height: 20),
             Text(title,
                 style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E1B3A))),
+                    color: Color(0xFF0F2C59))),
             const SizedBox(height: 8),
             Text(subtitle,
                 textAlign: TextAlign.center,
