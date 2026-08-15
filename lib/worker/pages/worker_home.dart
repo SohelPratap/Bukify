@@ -179,7 +179,7 @@ class _HomeWorkerPageState extends State<HomeWorkerPage>
         // BukiFy branding pill
         Container(
           margin: const EdgeInsets.only(right: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(20),
@@ -188,12 +188,19 @@ class _HomeWorkerPageState extends State<HomeWorkerPage>
               width: 1,
             ),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.construction_rounded,
-                  color: Colors.white, size: 13),
-              SizedBox(width: 5),
-              Text(
+              ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: Image.asset(
+                  'assets/images/third_logo.png',
+                  width: 20,
+                  height: 20,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Text(
                 "BukiFy",
                 style: TextStyle(
                   color: Colors.white,

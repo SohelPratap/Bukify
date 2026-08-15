@@ -336,6 +336,15 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             options: MapOptions(
               initialCenter: _currentLocation!,
               initialZoom: 14,
+              minZoom: 3.0,
+              maxZoom: 18.0,
+              // Locks camera movement to a single world grid
+              cameraConstraint: CameraConstraint.contain(
+                bounds: LatLngBounds(
+                  const LatLng(-89.0, -180.0),
+                  const LatLng(89.0, 180.0),
+                ),
+              ),
               onTap: (_, __) {
                 _searchFocusNode.unfocus();
                 if (_selectedItem != null) _dismissCard();
@@ -349,6 +358,11 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
                 urlTemplate:
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 userAgentPackageName: "com.bukify.app",
+                // Restricts tile rendering beyond world coordinates
+                tileBounds: LatLngBounds(
+                  const LatLng(-89.0, -180.0),
+                  const LatLng(89.0, 180.0),
+                ),
               ),
               if (widget.userRole == "worker" &&
                   widget.serviceRadius != null)
@@ -559,7 +573,7 @@ class _MapPageState extends State<MapPage> with SingleTickerProviderStateMixin {
             },
           )
               : IconButton(
-            icon: Icon(Icons.arrow_forward_rounded,
+            icon: const Icon(Icons.arrow_forward_rounded,
                 color: _primary, size: 18),
             onPressed: () {
               _searchFocusNode.unfocus();
@@ -711,7 +725,6 @@ class _WorkerInfoCard extends StatelessWidget {
 
   static const _primary = Color(0xFF0072FF);
   static const _primaryMid = Color(0xFF00C6FF);
-  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
