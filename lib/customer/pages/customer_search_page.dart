@@ -13,10 +13,10 @@ class CustomerSearchPage extends StatefulWidget {
 }
 
 class _CustomerSearchPageState extends State<CustomerSearchPage> {
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetSoft = Color(0xFFF3EEFF);
-  static const _ink = Color(0xFF1E1B3A);
-  static const _bg = Color(0xFFF8F5FF);
+  static const _primary = Color(0xFF0072FF);
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
+  static const _bg = Color(0xFFF5FAFF);
 
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -187,7 +187,7 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
               hintText: "Search workers by skill…",
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
               prefixIcon: Icon(Icons.search_rounded,
-                  color: _violet.withOpacity(0.7), size: 22),
+                  color: _primary.withOpacity(0.7), size: 22),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
                 icon: const Icon(Icons.close_rounded,
@@ -204,11 +204,11 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
               )
                   : IconButton(
                 icon: Icon(Icons.arrow_forward_rounded,
-                    color: _violet, size: 20),
+                    color: _primary, size: 20),
                 onPressed: () => _search(_searchController.text),
               ),
               filled: true,
-              fillColor: const Color(0xFFF8F5FF),
+              fillColor: _bg,
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 18, vertical: 14),
               border: OutlineInputBorder(
@@ -217,7 +217,7 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: _violet, width: 1.5),
+                borderSide: const BorderSide(color: _primary, width: 1.5),
               ),
             ),
           ),
@@ -239,7 +239,7 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: _violet),
+            CircularProgressIndicator(color: _primary),
             SizedBox(height: 16),
             Text("Getting your location…",
                 style: TextStyle(color: Colors.grey)),
@@ -324,8 +324,8 @@ class _WorkerCard extends StatelessWidget {
   final dynamic worker;
   final VoidCallback onTap;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _ink = Color(0xFF1E1B3A);
+  static const _primary = Color(0xFF0072FF);
+  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
@@ -360,7 +360,7 @@ class _WorkerCard extends StatelessWidget {
                     height: 56,
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Color(0xFF8B5CF6), Color(0xFFA855F7)],
+                        colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -438,7 +438,7 @@ class _WorkerCard extends StatelessWidget {
                         worker['skills_list'],
                         style: TextStyle(
                             fontSize: 12,
-                            color: _violet.withOpacity(0.8),
+                            color: _primary.withOpacity(0.8),
                             fontWeight: FontWeight.w500),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -449,7 +449,7 @@ class _WorkerCard extends StatelessWidget {
                         _Pill(
                             icon: Icons.near_me_rounded,
                             label: "${distance.toStringAsFixed(1)} km away",
-                            color: _violet),
+                            color: _primary),
                         const SizedBox(width: 8),
                         _Pill(
                             icon: Icons.work_history_rounded,
@@ -524,8 +524,8 @@ class _AutocompleteDropdown extends StatelessWidget {
   final IconData icon;
   final ValueChanged<String> onSelect;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _ink = Color(0xFF1E1B3A);
+  static const _primary = Color(0xFF0072FF);
+  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
@@ -561,9 +561,9 @@ class _AutocompleteDropdown extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                              color: _violet.withOpacity(0.08),
+                              color: _primary.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(8)),
-                          child: Icon(icon, size: 14, color: _violet),
+                          child: Icon(icon, size: 14, color: _primary),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -637,7 +637,7 @@ class _ShimmerCardState extends State<_ShimmerCard>
             ],
             colors: const [
               Color(0xFFF3F4F6),
-              Color(0xFFE9E4F5),
+              Color(0xFFDCEEFC),
               Color(0xFFF3F4F6),
             ],
           ),
@@ -669,16 +669,16 @@ class _EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(
-                  color: Color(0xFFF3EEFF), shape: BoxShape.circle),
+                  color: Color(0xFFE6F4FF), shape: BoxShape.circle),
               child:
-              Icon(icon, size: 44, color: const Color(0xFF8B5CF6)),
+              Icon(icon, size: 44, color: const Color(0xFF0072FF)),
             ),
             const SizedBox(height: 20),
             Text(title,
                 style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E1B3A))),
+                    color: Color(0xFF0F2C59))),
             const SizedBox(height: 8),
             Text(subtitle,
                 textAlign: TextAlign.center,

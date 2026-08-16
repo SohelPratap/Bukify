@@ -13,6 +13,13 @@ class CustomerProfilePage extends StatefulWidget {
 }
 
 class _CustomerProfilePageState extends State<CustomerProfilePage> {
+  // ── palette (brand blue) ─────────────────────────────
+  static const _primary = Color(0xFF0072FF);
+  static const _primaryMid = Color(0xFF00C6FF);
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
+  static const _bg = Color(0xFFF5FAFF);
+
   Map<String, dynamic>? _profile;
   bool _loading = true;
 
@@ -81,7 +88,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
           "Add Address",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1E1B3A),
+            color: _ink,
           ),
         ),
         content: Column(
@@ -93,7 +100,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                 labelText: "Label",
                 hintText: "e.g. Home, Office",
                 filled: true,
-                fillColor: const Color(0xFFF8F5FF),
+                fillColor: _bg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -101,7 +108,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                      color: Color(0xFF8B5CF6), width: 1.5),
+                      color: _primary, width: 1.5),
                 ),
               ),
             ),
@@ -111,7 +118,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
               decoration: InputDecoration(
                 labelText: "Address",
                 filled: true,
-                fillColor: const Color(0xFFF8F5FF),
+                fillColor: _bg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -119,7 +126,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                      color: Color(0xFF8B5CF6), width: 1.5),
+                      color: _primary, width: 1.5),
                 ),
               ),
             ),
@@ -152,7 +159,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                     ],
                   ),
                   duration: Duration(seconds: 4),
-                  backgroundColor: Color(0xFF8B5CF6),
+                  backgroundColor: _primary,
                   behavior: SnackBarBehavior.floating,
                 ),
               );
@@ -212,7 +219,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF8B5CF6),
+              backgroundColor: _primary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -230,7 +237,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+        child: CircularProgressIndicator(color: _primary),
       );
     }
 
@@ -248,9 +255,9 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
             padding: const EdgeInsets.fromLTRB(20, 36, 20, 32),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF8B5CF6), Color(0xFFA855F7)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                colors: [_primaryMid, _primary],
+                begin: Alignment.bottomLeft,
+                end: Alignment.topRight,
               ),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(32),
@@ -401,7 +408,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF8B5CF6).withOpacity(0.1),
+            color: _primary.withOpacity(0.1),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -420,11 +427,11 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                      color: _primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.location_on_rounded,
-                        color: Color(0xFF8B5CF6), size: 18),
+                        color: _primary, size: 18),
                   ),
                   const SizedBox(width: 10),
                   const Text(
@@ -432,7 +439,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E1B3A),
+                      color: _ink,
                     ),
                   ),
                 ],
@@ -444,7 +451,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6),
+                    color: _primary,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Row(
@@ -474,7 +481,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
               child: Padding(
                 padding: EdgeInsets.all(12),
                 child: CircularProgressIndicator(
-                    color: Color(0xFF8B5CF6)),
+                    color: _primary),
               ),
             )
           else if (_addresses.isEmpty)
@@ -482,18 +489,18 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
               padding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 18),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F5FF),
+                color: _bg,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Row(
                 children: [
                   Icon(Icons.location_off_rounded,
-                      color: Color(0xFFBBB0D6), size: 22),
+                      color: Color(0xFFA8C9E8), size: 22),
                   SizedBox(width: 12),
                   Text(
                     "No addresses added yet",
                     style: TextStyle(
-                      color: Color(0xFFBBB0D6),
+                      color: Color(0xFFA8C9E8),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -510,12 +517,12 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: isDefault
-                        ? const Color(0xFF8B5CF6).withOpacity(0.07)
+                        ? _primary.withOpacity(0.07)
                         : const Color(0xFFF8F9FA),
                     borderRadius: BorderRadius.circular(14),
                     border: isDefault
                         ? Border.all(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.25),
+                      color: _primary.withOpacity(0.25),
                       width: 1.5,
                     )
                         : null,
@@ -525,7 +532,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                       Icon(
                         Icons.location_on_rounded,
                         color: isDefault
-                            ? const Color(0xFF8B5CF6)
+                            ? _primary
                             : Colors.grey.shade400,
                         size: 20,
                       ),
@@ -541,7 +548,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
-                                    color: Color(0xFF1E1B3A),
+                                    color: _ink,
                                   ),
                                 ),
                                 if (isDefault) ...[
@@ -550,7 +557,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF8B5CF6)
+                                      color: _primary
                                           .withOpacity(0.12),
                                       borderRadius:
                                       BorderRadius.circular(10),
@@ -558,7 +565,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                                     child: const Text(
                                       "Default",
                                       style: TextStyle(
-                                        color: Color(0xFF8B5CF6),
+                                        color: _primary,
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -646,7 +653,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
                     fontWeight: FontWeight.bold,
                     color: isValueMuted
                         ? Colors.grey[400]
-                        : const Color(0xFF1E1B3A),
+                        : _ink,
                   ),
                 ),
               ],

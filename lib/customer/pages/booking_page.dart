@@ -1,769 +1,545 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../services/customer_jobs_service.dart';
-import '../../services/customer_service.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../services/worker_search_service.dart';
+import '../../services/skills_service.dart';
+import 'worker_public_profile_page.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
 
   @override
-  State<BookingPage> createState() => _BookingPageState();
+  State<BookingPage> createState() => _CustomerSearchPageState();
 }
 
-class _BookingPageState extends State<BookingPage>
-    with SingleTickerProviderStateMixin {
-  // Step control
-  int _currentStep = 0;
-  late final PageController _pageController;
-  late final AnimationController _progressController;
+class _CustomerSearchPageState extends State<BookingPage> {
+  static const _primary = Color(0xFF0072FF);
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
+  static const _bg = Color(0xFFF5FAFF);
 
-  // Form data
-  String? _selectedSkillId;
-  String? _selectedSkillName;
-  String? _selectedAddressId;
-  String? _selectedAddressLabel;
-  String? _selectedAddressText;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
-  final TextEditingController _serviceSearchController =
-  TextEditingController();
-  final TextEditingController _addressSearchController =
-  TextEditingController();
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController =
-  TextEditingController();
+  List<dynamic> _results = [];
+  List<String> _allSkills = [];           // ← loaded from API
+  List<String> _autocompleteResults = [];
+  bool _loading = false;
+  bool _locationLoading = true;
+  bool _showAutocomplete = false;
+  String? _error;
 
-  bool _submitting = false;
-
-  List<dynamic> _skillSuggestions = [];
-  List<dynamic> _addressSuggestions = [];
-
-  bool _searchingSkill = false;
-  bool _searchingAddress = false;
-
-  static const _purple = Color(0xFF8B5CF6);
-  static const _purpleLight = Color(0xFFA855F7);
-  static const _purpleSoft = Color(0xFFF3EEFF);
+  double? _lat;
+  double? _lng;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
-    _progressController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-      value: 0,
-    );
+    _fetchLocation();
+    _fetchSkills();
+    _searchController.addListener(_onSearchChanged);
+    _searchFocusNode.addListener(() {
+      if (!_searchFocusNode.hasFocus) {
+        setState(() => _showAutocomplete = false);
+      }
+    });
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
-    _progressController.dispose();
-    _serviceSearchController.dispose();
-    _addressSearchController.dispose();
-    _titleController.dispose();
-    _descriptionController.dispose();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
-  void _goToStep(int step) {
-    setState(() => _currentStep = step);
-    _pageController.animateToPage(
-      step,
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOutCubic,
-    );
-    _progressController.animateTo(step / 2);
+  // ── fetch skill names from DB once ───────────────────
+  Future<void> _fetchSkills() async {
+    try {
+      final skills = await SkillService.getSkills();
+      if (!mounted) return;
+      setState(() => _allSkills = skills);
+    } catch (_) {
+      // autocomplete silently unavailable; search still works
+    }
   }
 
-  bool get _canAdvanceStep0 =>
-      _selectedSkillId != null;
-  bool get _canAdvanceStep1 =>
-      _selectedAddressId != null;
-  bool get _canAdvanceStep2 =>
-      _titleController.text.trim().isNotEmpty;
-
-  Future<void> _searchSkills(String query) async {
-    if (query.isEmpty) {
-      setState(() => _skillSuggestions = []);
+  // ── filter _allSkills as user types ──────────────────
+  void _onSearchChanged() {
+    final q = _searchController.text.trim();
+    setState(() {}); // refresh suffix icon
+    if (q.isEmpty) {
+      setState(() {
+        _autocompleteResults = [];
+        _showAutocomplete = false;
+      });
       return;
     }
-    setState(() => _searchingSkill = true);
+    final lower = q.toLowerCase();
+    final matches = _allSkills
+        .where((s) =>
+    s.toLowerCase().startsWith(lower) ||
+        s.toLowerCase().contains(lower))
+        .take(6)
+        .toList();
+    setState(() {
+      _autocompleteResults = matches;
+      _showAutocomplete = matches.isNotEmpty && _searchFocusNode.hasFocus;
+    });
+  }
+
+  void _selectAutocomplete(String skill) {
+    _searchController.text = skill;
+    _searchFocusNode.unfocus();
+    setState(() {
+      _showAutocomplete = false;
+      _autocompleteResults = [];
+    });
+    _search(skill);
+  }
+
+  Future<void> _fetchLocation() async {
     try {
-      final results = await CustomerService.searchSkills(query);
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
       if (!mounted) return;
       setState(() {
-        _skillSuggestions = results;
-        _searchingSkill = false;
+        _lat = pos.latitude;
+        _lng = pos.longitude;
+        _locationLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _searchingSkill = false);
-    }
-  }
-
-  Future<void> _searchAddresses(String query) async {
-    if (query.isEmpty) {
-      setState(() => _addressSuggestions = []);
-      return;
-    }
-    setState(() => _searchingAddress = true);
-    try {
-      final results = await CustomerService.searchAddresses(query);
-      if (!mounted) return;
       setState(() {
-        _addressSuggestions = results;
-        _searchingAddress = false;
+        _locationLoading = false;
+        _error = "Could not get your location.";
       });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _searchingAddress = false);
     }
   }
 
-  Future<void> _submitBooking() async {
-    if (!_canAdvanceStep2) return;
-    HapticFeedback.mediumImpact();
-    setState(() => _submitting = true);
+  Future<void> _search(String query) async {
+    final q = query.trim();
+    if (q.isEmpty || _lat == null || _lng == null) return;
+
+    HapticFeedback.selectionClick();
+    _searchFocusNode.unfocus();
+    setState(() {
+      _loading = true;
+      _error = null;
+      _results = [];
+      _showAutocomplete = false;
+    });
 
     try {
-      await JobsService.createJob(
-        skillId: _selectedSkillId!,
-        addressId: _selectedAddressId!,
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.isEmpty
-            ? null
-            : _descriptionController.text,
+      final results = await WorkerSearchService.searchWorkers(
+        skill: q,
+        lat: _lat!,
+        lng: _lng!,
       );
-
-      _serviceSearchController.clear();
-      _addressSearchController.clear();
-      _titleController.clear();
-      _descriptionController.clear();
-
       if (!mounted) return;
-
       setState(() {
-        _selectedSkillId = null;
-        _selectedSkillName = null;
-        _selectedAddressId = null;
-        _selectedAddressLabel = null;
-        _selectedAddressText = null;
-        _skillSuggestions = [];
-        _addressSuggestions = [];
+        _results = results;
+        _loading = false;
       });
-
-      _goToStep(0);
-      _showSuccessSheet();
     } catch (_) {
       if (!mounted) return;
-      _showErrorSnack();
+      setState(() {
+        _loading = false;
+        _error = "Search failed. Try again.";
+      });
     }
-
-    if (!mounted) return;
-    setState(() => _submitting = false);
   }
 
-  void _showSuccessSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _SuccessSheet(),
-    );
-  }
-
-  void _showErrorSnack() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _searchFocusNode.unfocus(),
+      child: Container(
+        color: _bg,
+        child: Column(
           children: [
-            Icon(Icons.error_outline, color: Colors.white),
-            SizedBox(width: 10),
-            Text("Failed to create booking. Try again."),
+            _buildSearchBar(),
+            Expanded(child: _buildBody()),
           ],
         ),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F5FF),
-      body: Column(
-        children: [
-          _buildHeader(),
-          _buildStepIndicator(),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildStep0Service(),
-                _buildStep1Address(),
-                _buildStep2Details(),
-              ],
-            ),
-          ),
-          _buildBottomNav(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    const titles = ["Choose Service", "Pick Location", "Job Details"];
-    const subtitles = [
-      "What do you need help with?",
-      "Where should the worker come?",
-      "Describe what needs to be done",
-    ];
+  Widget _buildSearchBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: Text(
-              titles[_currentStep],
-              key: ValueKey('title$_currentStep'),
-              style: const TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E1B3A),
-                letterSpacing: -0.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: Text(
-              subtitles[_currentStep],
-              key: ValueKey('sub$_currentStep'),
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepIndicator() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 18, 24, 4),
-      child: Row(
-        children: List.generate(3, (i) {
-          final isActive = i == _currentStep;
-          final isDone = i < _currentStep;
-          return Expanded(
-            child: GestureDetector(
-              onTap: isDone ? () => _goToStep(i) : null,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 350),
-                curve: Curves.easeInOut,
-                margin: EdgeInsets.only(right: i < 2 ? 8 : 0),
-                height: 5,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: isActive
-                      ? _purple
-                      : isDone
-                      ? _purpleLight.withOpacity(0.5)
-                      : Colors.grey.shade200,
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  // ────────── STEP 0: SERVICE ──────────
-  Widget _buildStep0Service() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search field
-          _SearchField(
-            controller: _serviceSearchController,
-            hint: "e.g. Plumber, Electrician…",
-            icon: Icons.construction_rounded,
-            isLoading: _searchingSkill,
-            onChanged: _searchSkills,
-          ),
-          const SizedBox(height: 12),
-
-          // Suggestions
-          if (_skillSuggestions.isNotEmpty)
-            _SuggestionList(
-              items: _skillSuggestions,
-              titleKey: 'name',
-              subtitleKey: null,
-              onSelect: (item) {
-                HapticFeedback.selectionClick();
-                setState(() {
-                  _selectedSkillId = item['id'];
-                  _selectedSkillName = item['name'];
-                  _serviceSearchController.text = item['name'];
-                  _skillSuggestions = [];
-                });
-              },
-            ),
-
-          const SizedBox(height: 20),
-
-          // Selected chip
-          if (_selectedSkillId != null)
-            _SelectedBadge(
-              label: _selectedSkillName!,
-              icon: Icons.handyman_rounded,
-              onClear: () => setState(() {
-                _selectedSkillId = null;
-                _selectedSkillName = null;
-                _serviceSearchController.clear();
-              }),
-            ),
-
-          const SizedBox(height: 24),
-
-          // Quick picks label
-          Text(
-            "Popular Services",
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[500],
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Quick service grid — tapping pre-fills search
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: const [
-              "Plumber",
-              "Electrician",
-              "Cleaner",
-              "Painter",
-              "Carpenter",
-              "AC Repair",
-            ]
-                .map(
-                  (s) => _QuickChip(
-                label: s,
-                isSelected: _selectedSkillName == s,
-                onTap: () {
-                  _serviceSearchController.text = s;
-                  _searchSkills(s);
+          TextField(
+            controller: _searchController,
+            focusNode: _searchFocusNode,
+            textInputAction: TextInputAction.search,
+            onSubmitted: _search,
+            style: const TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w500, color: _ink),
+            decoration: InputDecoration(
+              hintText: "Search workers by skill…",
+              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+              prefixIcon: Icon(Icons.search_rounded,
+                  color: _primary.withOpacity(0.7), size: 22),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                icon: const Icon(Icons.close_rounded,
+                    color: Colors.grey, size: 20),
+                onPressed: () {
+                  _searchController.clear();
+                  _searchFocusNode.unfocus();
+                  setState(() {
+                    _results = [];
+                    _error = null;
+                    _showAutocomplete = false;
+                  });
                 },
+              )
+                  : IconButton(
+                icon: Icon(Icons.arrow_forward_rounded,
+                    color: _primary, size: 20),
+                onPressed: () => _search(_searchController.text),
               ),
-            )
-                .toList(),
+              filled: true,
+              fillColor: _bg,
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 18, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: _primary, width: 1.5),
+              ),
+            ),
           ),
+
+          if (_showAutocomplete && _autocompleteResults.isNotEmpty)
+            _AutocompleteDropdown(
+              items: _autocompleteResults,
+              icon: Icons.person_search_rounded,
+              onSelect: _selectAutocomplete,
+            ),
         ],
       ),
     );
   }
 
-  // ────────── STEP 1: ADDRESS ──────────
-  Widget _buildStep1Address() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SearchField(
-            controller: _addressSearchController,
-            hint: "Search your saved addresses…",
-            icon: Icons.location_on_rounded,
-            isLoading: _searchingAddress,
-            onChanged: _searchAddresses,
-          ),
-          const SizedBox(height: 12),
+  Widget _buildBody() {
+    if (_locationLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: _primary),
+            SizedBox(height: 16),
+            Text("Getting your location…",
+                style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
 
-          if (_addressSuggestions.isNotEmpty)
-            _SuggestionList(
-              items: _addressSuggestions,
-              titleKey: 'label',
-              subtitleKey: 'address',
-              onSelect: (item) {
-                HapticFeedback.selectionClick();
-                setState(() {
-                  _selectedAddressId = item['id'];
-                  _selectedAddressLabel = item['label'] ?? 'Address';
-                  _selectedAddressText = item['address'] ?? '';
-                  _addressSearchController.text =
-                      item['label'] ?? 'Address';
-                  _addressSuggestions = [];
-                });
-              },
-            ),
-
-          const SizedBox(height: 20),
-
-          if (_selectedAddressId != null)
-            _SelectedBadge(
-              label: _selectedAddressLabel!,
-              sublabel: _selectedAddressText,
-              icon: Icons.location_on_rounded,
-              onClear: () => setState(() {
-                _selectedAddressId = null;
-                _selectedAddressLabel = null;
-                _selectedAddressText = null;
-                _addressSearchController.clear();
-              }),
-            ),
-
-          const SizedBox(height: 28),
-
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: _purpleSoft,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _purple.withOpacity(0.15),
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                    color: Color(0xFFFEF2F2), shape: BoxShape.circle),
+                child: const Icon(Icons.error_outline_rounded,
+                    color: Colors.redAccent, size: 36),
               ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline_rounded,
-                    color: _purple.withOpacity(0.7), size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    "Only addresses saved in your profile will appear. Add more from the Profile tab.",
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: _purple.withOpacity(0.8),
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              const SizedBox(height: 16),
+              Text(_error!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey)),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      );
+    }
 
-  // ────────── STEP 2: DETAILS ──────────
-  Widget _buildStep2Details() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Booking summary card
-          _SummaryCard(
-            skillName: _selectedSkillName ?? '—',
-            addressLabel: _selectedAddressLabel ?? '—',
-            addressText: _selectedAddressText ?? '',
+    if (_loading) {
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        itemCount: 5,
+        itemBuilder: (_, __) => const _ShimmerCard(),
+      );
+    }
+
+    if (_results.isEmpty && _searchController.text.isNotEmpty) {
+      return _EmptyState(
+        icon: Icons.person_search_rounded,
+        title: "No workers found",
+        subtitle:
+        'No workers offering "${_searchController.text}" are in your area right now.',
+      );
+    }
+
+    if (_results.isEmpty) {
+      return const _EmptyState(
+        icon: Icons.search_rounded,
+        title: "Find nearby workers",
+        subtitle: "Type a skill above to find available workers near you.",
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      itemCount: _results.length,
+      itemBuilder: (_, i) {
+        final w = _results[i];
+        return _WorkerCard(
+          worker: w,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => WorkerPublicProfilePage(worker: w)),
           ),
-
-          const SizedBox(height: 24),
-
-          _FormLabel("Job Title *"),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _titleController,
-            textCapitalization: TextCapitalization.sentences,
-            onChanged: (_) => setState(() {}),
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF1E1B3A),
-            ),
-            decoration: _inputDeco(
-              hint: "e.g. Leaking pipe in kitchen",
-              icon: Icons.title_rounded,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          _FormLabel("Description (optional)"),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _descriptionController,
-            maxLines: 5,
-            textCapitalization: TextCapitalization.sentences,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF1E1B3A),
-            ),
-            decoration: _inputDeco(
-              hint:
-              "Describe the problem in detail — what happened, what you need…",
-              icon: null,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  InputDecoration _inputDeco({
-    required String hint,
-    IconData? icon,
-  }) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(
-        color: Colors.grey[400],
-        fontSize: 14,
-      ),
-      prefixIcon: icon != null
-          ? Icon(icon, color: _purple.withOpacity(0.6), size: 20)
-          : null,
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 16,
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade200),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade200),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: _purple, width: 1.5),
-      ),
-    );
-  }
-
-  // ────────── BOTTOM NAV ──────────
-  Widget _buildBottomNav() {
-    final bool canContinue = [
-      _canAdvanceStep0,
-      _canAdvanceStep1,
-      _canAdvanceStep2,
-    ][_currentStep];
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Back button
-          if (_currentStep > 0)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: _OutlineBtn(
-                onTap: () => _goToStep(_currentStep - 1),
-                child: const Icon(Icons.arrow_back_rounded,
-                    color: _purple, size: 20),
-              ),
-            ),
-
-          // Continue / Confirm button
-          Expanded(
-            child: AnimatedOpacity(
-              opacity: canContinue ? 1 : 0.45,
-              duration: const Duration(milliseconds: 200),
-              child: GestureDetector(
-                onTap: canContinue
-                    ? () {
-                  if (_currentStep < 2) {
-                    _goToStep(_currentStep + 1);
-                  } else {
-                    _submitBooking();
-                  }
-                }
-                    : null,
-                child: Container(
-                  height: 54,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [_purple, _purpleLight],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: canContinue
-                        ? [
-                      BoxShadow(
-                        color: _purple.withOpacity(0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      )
-                    ]
-                        : [],
-                  ),
-                  child: Center(
-                    child: _submitting
-                        ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
-                        : Text(
-                      _currentStep < 2 ? "Continue" : "Confirm Booking",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-// ══════════════════════════════════════
-//  SUB-WIDGETS
-// ══════════════════════════════════════
+// ══════════════════════════════════════════════════════
+//  WORKER CARD
+// ══════════════════════════════════════════════════════
+class _WorkerCard extends StatelessWidget {
+  const _WorkerCard({required this.worker, required this.onTap});
 
-class _FormLabel extends StatelessWidget {
-  const _FormLabel(this.text);
-  final String text;
+  final dynamic worker;
+  final VoidCallback onTap;
+
+  static const _primary = Color(0xFF0072FF);
+  static const _ink = Color(0xFF0F2C59);
+
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF4B4569),
-        letterSpacing: 0.2,
+    final double distance =
+        double.tryParse(worker['distance_km']?.toString() ?? '0') ?? 0;
+    final bool isOnline = worker['is_online'].toString() == '1';
+    final double rating =
+        double.tryParse(worker['rating']?.toString() ?? '0') ?? 0;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 14,
+                offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Stack(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        _initials(worker['full_name'] ?? worker['email']),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: isOnline
+                            ? Colors.greenAccent
+                            : Colors.grey.shade400,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            worker['full_name'] ?? 'Worker',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: _ink),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded,
+                                color: Color(0xFFF59E0B), size: 14),
+                            const SizedBox(width: 3),
+                            Text(rating.toStringAsFixed(1),
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: _ink)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(worker['email'] ?? '',
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey[500]),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 6),
+                    if (worker['skills_list'] != null &&
+                        (worker['skills_list'] as String).isNotEmpty)
+                      Text(
+                        worker['skills_list'],
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: _primary.withOpacity(0.8),
+                            fontWeight: FontWeight.w500),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _Pill(
+                            icon: Icons.near_me_rounded,
+                            label: "${distance.toStringAsFixed(1)} km away",
+                            color: _primary),
+                        const SizedBox(width: 8),
+                        _Pill(
+                            icon: Icons.work_history_rounded,
+                            label:
+                            "${worker['experience_years'] ?? 0} yrs exp",
+                            color: const Color(0xFFF59E0B)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right_rounded,
+                  color: Colors.grey.shade300, size: 22),
+            ],
+          ),
+        ),
       ),
     );
   }
+
+  String _initials(String? name) {
+    if (name == null || name.isEmpty) return '?';
+    final parts = name.trim().split(' ');
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
 }
 
-class _SearchField extends StatelessWidget {
-  const _SearchField({
-    required this.controller,
-    required this.hint,
-    required this.icon,
-    required this.isLoading,
-    required this.onChanged,
-  });
+class _Pill extends StatelessWidget {
+  const _Pill(
+      {required this.icon, required this.label, required this.color});
 
-  final TextEditingController controller;
-  final String hint;
   final IconData icon;
-  final bool isLoading;
-  final ValueChanged<String> onChanged;
-
-  static const _purple = Color(0xFF8B5CF6);
+  final String label;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w500,
-        color: Color(0xFF1E1B3A),
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-        prefixIcon: Icon(icon, color: _purple.withOpacity(0.6), size: 20),
-        suffixIcon: isLoading
-            ? const Padding(
-          padding: EdgeInsets.all(14),
-          child: SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: _purple,
-            ),
-          ),
-        )
-            : null,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-        const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _purple, width: 1.5),
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color)),
+        ],
       ),
     );
   }
 }
 
-class _SuggestionList extends StatelessWidget {
-  const _SuggestionList({
+// ══════════════════════════════════════════════════════
+//  SHARED AUTOCOMPLETE DROPDOWN
+// ══════════════════════════════════════════════════════
+class _AutocompleteDropdown extends StatelessWidget {
+  const _AutocompleteDropdown({
     required this.items,
-    required this.titleKey,
-    required this.subtitleKey,
+    required this.icon,
     required this.onSelect,
   });
 
-  final List<dynamic> items;
-  final String titleKey;
-  final String? subtitleKey;
-  final ValueChanged<dynamic> onSelect;
+  final List<String> items;
+  final IconData icon;
+  final ValueChanged<String> onSelect;
 
-  static const _purple = Color(0xFF8B5CF6);
+  static const _primary = Color(0xFF0072FF);
+  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 14,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: ClipRRect(
@@ -771,47 +547,37 @@ class _SuggestionList extends StatelessWidget {
         child: Column(
           children: items.asMap().entries.map((entry) {
             final i = entry.key;
-            final item = entry.value;
+            final skill = entry.value;
             return Column(
               children: [
-                if (i > 0)
-                  Divider(height: 1, color: Colors.grey.shade100),
-                ListTile(
-                  dense: true,
-                  contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  leading: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: _purple.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 12,
-                      color: _purple,
+                if (i > 0) Divider(height: 1, color: Colors.grey.shade100),
+                InkWell(
+                  onTap: () => onSelect(skill),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 11),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                              color: _primary.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8)),
+                          child: Icon(icon, size: 14, color: _primary),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(skill,
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: _ink)),
+                        ),
+                        Icon(Icons.north_west_rounded,
+                            size: 13, color: Colors.grey[400]),
+                      ],
                     ),
                   ),
-                  title: Text(
-                    item[titleKey] ?? '',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: Color(0xFF1E1B3A),
-                    ),
-                  ),
-                  subtitle: subtitleKey != null && item[subtitleKey] != null
-                      ? Text(
-                    item[subtitleKey],
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                      : null,
-                  onTap: () => onSelect(item),
                 ),
               ],
             );
@@ -822,337 +588,104 @@ class _SuggestionList extends StatelessWidget {
   }
 }
 
-class _SelectedBadge extends StatelessWidget {
-  const _SelectedBadge({
-    required this.label,
-    this.sublabel,
-    required this.icon,
-    required this.onClear,
-  });
-
-  final String label;
-  final String? sublabel;
-  final IconData icon;
-  final VoidCallback onClear;
-
-  static const _purple = Color(0xFF8B5CF6);
+// ══════════════════════════════════════════════════════
+//  SHIMMER
+// ══════════════════════════════════════════════════════
+class _ShimmerCard extends StatefulWidget {
+  const _ShimmerCard();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3EEFF),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _purple.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: _purple.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: _purple, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xFF1E1B3A),
-                  ),
-                ),
-                if (sublabel != null && sublabel!.isNotEmpty)
-                  Text(
-                    sublabel!,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: onClear,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.close, size: 14, color: Colors.grey),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  State<_ShimmerCard> createState() => _ShimmerCardState();
 }
 
-class _QuickChip extends StatelessWidget {
-  const _QuickChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
+class _ShimmerCardState extends State<_ShimmerCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
 
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1200))
+      ..repeat();
+    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+  }
 
-  static const _purple = Color(0xFF8B5CF6);
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Container(
+        height: 110,
+        margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: isSelected ? _purple : Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isSelected ? _purple : Colors.grey.shade300,
-          ),
-          boxShadow: isSelected
-              ? [
-            BoxShadow(
-              color: _purple.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            )
-          ]
-              : [],
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF4B4569),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.skillName,
-    required this.addressLabel,
-    required this.addressText,
-  });
-
-  final String skillName;
-  final String addressLabel;
-  final String addressText;
-
-  static const _purple = Color(0xFF8B5CF6);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF8B5CF6), Color(0xFFA855F7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: _purple.withOpacity(0.3),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _SummaryRow(
-            icon: Icons.handyman_rounded,
-            label: "Service",
-            value: skillName,
-          ),
-          Divider(height: 20, color: Colors.white.withOpacity(0.2)),
-          _SummaryRow(
-            icon: Icons.location_on_rounded,
-            label: "Location",
-            value: addressLabel,
-            sub: addressText,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.sub,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final String? sub;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: Colors.white, size: 18),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.7),
-                  letterSpacing: 0.4,
-                ),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              if (sub != null && sub!.isNotEmpty)
-                Text(
-                  sub!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            stops: [
+              (_anim.value - 0.3).clamp(0.0, 1.0),
+              _anim.value.clamp(0.0, 1.0),
+              (_anim.value + 0.3).clamp(0.0, 1.0),
+            ],
+            colors: const [
+              Color(0xFFF3F4F6),
+              Color(0xFFDCEEFC),
+              Color(0xFFF3F4F6),
             ],
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _OutlineBtn extends StatelessWidget {
-  const _OutlineBtn({required this.onTap, required this.child});
-  final VoidCallback onTap;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 54,
-        height: 54,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Center(child: child),
       ),
     );
   }
 }
 
-class _SuccessSheet extends StatelessWidget {
+// ══════════════════════════════════════════════════════
+//  EMPTY STATE
+// ══════════════════════════════════════════════════════
+class _EmptyState extends StatelessWidget {
+  const _EmptyState(
+      {required this.icon, required this.title, required this.subtitle});
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF8B5CF6), Color(0xFFA855F7)],
-              ),
-              shape: BoxShape.circle,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                  color: Color(0xFFE6F4FF), shape: BoxShape.circle),
+              child:
+              Icon(icon, size: 44, color: const Color(0xFF0072FF)),
             ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: Colors.white,
-              size: 36,
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            "Booking Created!",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E1B3A),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Your job has been posted. A worker will pick it up soon.",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8B5CF6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text(
-                "Done",
+            const SizedBox(height: 20),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F2C59))),
+            const SizedBox(height: 8),
+            Text(subtitle,
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-        ],
+                    fontSize: 14, color: Colors.grey[500], height: 1.5)),
+          ],
+        ),
       ),
     );
   }

@@ -17,8 +17,8 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetMid = Color(0xFFA855F7);
+  static const _primary = Color(0xFF0072FF);
+  static const _primaryMid = Color(0xFF00C6FF);
 
   static const _navItems = [
     _NavItem(icon: Icons.search_rounded, label: "Search"),
@@ -36,14 +36,6 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
     "Profile",
   ];
 
-  final List<Widget> _pages = const [
-    CustomerSearchPage(),
-    MapPage(userRole: "customer"),
-    BookingPage(),
-    CustomerHistoryPage(),
-    CustomerProfilePage(),
-  ];
-
   void _onNavTap(int index) {
     if (index == _currentIndex) return;
     HapticFeedback.selectionClick();
@@ -52,8 +44,16 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      const CustomerSearchPage(),
+      const MapPage(userRole: "customer"),
+      const BookingPage(),
+      const CustomerHistoryPage(),
+      const CustomerProfilePage(),
+    ];
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F5FF),
+      backgroundColor: const Color(0xFFF5FAFF),
       appBar: _buildAppBar(),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 220),
@@ -65,7 +65,7 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
         ),
         child: KeyedSubtree(
           key: ValueKey(_currentIndex),
-          child: _pages[_currentIndex],
+          child: pages[_currentIndex],
         ),
       ),
       bottomNavigationBar: _buildBottomNav(),
@@ -79,9 +79,9 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
       flexibleSpace: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF8B5CF6), _violetMid],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [_primaryMid, _primary],
+            begin: Alignment.bottomLeft,
+            end: Alignment.topRight,
           ),
         ),
       ),
@@ -118,8 +118,7 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
       actions: [
         Container(
           margin: const EdgeInsets.only(right: 16),
-          padding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(20),
@@ -128,12 +127,19 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
               width: 1,
             ),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.home_repair_service_rounded,
-                  color: Colors.white, size: 13),
-              SizedBox(width: 5),
-              Text(
+              ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: Image.asset(
+                  'assets/images/third_logo.png',
+                  width: 20,
+                  height: 20,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Text(
                 "BukiFy",
                 style: TextStyle(
                   color: Colors.white,
@@ -155,7 +161,7 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: _violet.withOpacity(0.10),
+            color: _primary.withOpacity(0.10),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -185,14 +191,14 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
                     height: 46,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF8B5CF6), _violetMid],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        colors: [_primaryMid, _primary],
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.topRight,
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: _violet
+                          color: _primary
                               .withOpacity(isActive ? 0.4 : 0.2),
                           blurRadius: isActive ? 14 : 6,
                           offset: const Offset(0, 3),
@@ -216,7 +222,7 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
                       horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? _violet.withOpacity(0.09)
+                        ? _primary.withOpacity(0.09)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -226,7 +232,7 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
                       Icon(
                         item.icon,
                         color: isActive
-                            ? _violet
+                            ? _primary
                             : Colors.grey.shade400,
                         size: 20,
                       ),
@@ -239,7 +245,7 @@ class _HomeCustomerPageState extends State<HomeCustomerPage>
                               ? FontWeight.bold
                               : FontWeight.w500,
                           color: isActive
-                              ? _violet
+                              ? _primary
                               : Colors.grey.shade400,
                         ),
                         child: Text(item.label),

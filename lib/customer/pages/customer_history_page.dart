@@ -11,11 +11,11 @@ class CustomerHistoryPage extends StatefulWidget {
 
 class _CustomerHistoryPageState extends State<CustomerHistoryPage>
     with SingleTickerProviderStateMixin {
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetMid = Color(0xFFA855F7);
-  static const _violetSoft = Color(0xFFF3EEFF);
-  static const _ink = Color(0xFF1E1B3A);
-  static const _bg = Color(0xFFF8F5FF);
+  static const _primary = Color(0xFF0072FF);
+  static const _primaryMid = Color(0xFF00C6FF);
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
+  static const _bg = Color(0xFFF5FAFF);
 
   late TabController _tabController;
 
@@ -220,17 +220,21 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
           Container(
             height: 44,
             decoration: BoxDecoration(
-              color: _violetSoft,
+              color: _primarySoft,
               borderRadius: BorderRadius.circular(14),
             ),
             child: TabBar(
               controller: _tabController,
               indicator: BoxDecoration(
-                color: _violet,
+                gradient: const LinearGradient(
+                  colors: [_primaryMid, _primary],
+                  begin: Alignment.bottomLeft,
+                  end: Alignment.topRight,
+                ),
                 borderRadius: BorderRadius.circular(11),
                 boxShadow: [
                   BoxShadow(
-                    color: _violet.withOpacity(0.3),
+                    color: _primary.withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -239,7 +243,7 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               labelColor: Colors.white,
-              unselectedLabelColor: _violet,
+              unselectedLabelColor: _primary,
               labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
               padding: const EdgeInsets.all(4),
@@ -288,7 +292,7 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
     }
 
     return RefreshIndicator(
-      color: _violet,
+      color: _primary,
       onRefresh: () async {
         await Future.wait([_loadActive(), _loadPast()]);
       },
@@ -326,7 +330,7 @@ class _CustomerHistoryPageState extends State<CustomerHistoryPage>
     }
 
     return RefreshIndicator(
-      color: _violet,
+      color: _primary,
       onRefresh: _loadPast,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -359,8 +363,8 @@ class _JobCard extends StatelessWidget {
   final VoidCallback? onCancel;
   final VoidCallback? onComplete;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _ink = Color(0xFF1E1B3A);
+  static const _primary = Color(0xFF0072FF);
+  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
@@ -462,20 +466,20 @@ class _JobCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: _violet.withOpacity(0.08),
+                    color: _primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.handyman_rounded, color: _violet, size: 13),
+                      const Icon(Icons.handyman_rounded, color: _primary, size: 13),
                       const SizedBox(width: 5),
                       Text(
                         job['skill_name'] ?? '—',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: _violet,
+                          color: _primary,
                         ),
                       ),
                     ],
@@ -603,8 +607,8 @@ class _JobCard extends StatelessWidget {
         return _StatusConfig(
           label: 'OPEN',
           icon: Icons.radio_button_unchecked_rounded,
-          color: const Color(0xFF8B5CF6),
-          bgColor: const Color(0xFFF3EEFF),
+          color: const Color(0xFF0072FF),
+          bgColor: const Color(0xFFE6F4FF),
         );
       case 'accepted':
         return _StatusConfig(
@@ -804,10 +808,10 @@ class _EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(
-                color: Color(0xFFF3EEFF),
+                color: Color(0xFFE6F4FF),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 44, color: const Color(0xFF8B5CF6)),
+              child: Icon(icon, size: 44, color: const Color(0xFF0072FF)),
             ),
             const SizedBox(height: 20),
             Text(
@@ -815,7 +819,7 @@ class _EmptyState extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E1B3A),
+                color: Color(0xFF0F2C59),
               ),
             ),
             const SizedBox(height: 8),

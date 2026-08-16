@@ -5,10 +5,10 @@ class WorkerPublicProfilePage extends StatelessWidget {
 
   final dynamic worker;
 
-  static const _violet = Color(0xFF8B5CF6);
-  static const _violetMid = Color(0xFFA855F7);
-  static const _violetSoft = Color(0xFFF3EEFF);
-  static const _ink = Color(0xFF1E1B3A);
+  static const _primary = Color(0xFF0072FF);
+  static const _primaryMid = Color(0xFF00C6FF);
+  static const _primarySoft = Color(0xFFE6F4FF);
+  static const _ink = Color(0xFF0F2C59);
 
   @override
   Widget build(BuildContext context) {
@@ -19,14 +19,14 @@ class WorkerPublicProfilePage extends StatelessWidget {
     final String skillsList = worker['skills_list'] ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F5FF),
+      backgroundColor: const Color(0xFFF5FAFF),
       body: CustomScrollView(
         slivers: [
           // ── APP BAR ───────────────────────────────
           SliverAppBar(
             expandedHeight: 240,
             pinned: true,
-            backgroundColor: _violet,
+            backgroundColor: _primary,
             leading: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
@@ -43,9 +43,9 @@ class WorkerPublicProfilePage extends StatelessWidget {
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF7C3AED), _violetMid],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    colors: [_primaryMid, _primary],
+                    begin: Alignment.bottomLeft,
+                    end: Alignment.topRight,
                   ),
                 ),
                 child: Column(
@@ -205,7 +205,7 @@ class WorkerPublicProfilePage extends StatelessWidget {
                           value:
                           "${distance.toStringAsFixed(1)} km",
                           label: "Distance",
-                          color: _violet,
+                          color: _primary,
                         ),
                       ),
                     ],
@@ -218,7 +218,7 @@ class WorkerPublicProfilePage extends StatelessWidget {
                     _InfoCard(
                       icon: Icons.handyman_rounded,
                       title: "Skills & Services",
-                      color: _violet,
+                      color: _primary,
                       child: Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -228,26 +228,26 @@ class WorkerPublicProfilePage extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: _violetSoft,
+                            color: _primarySoft,
                             borderRadius:
                             BorderRadius.circular(20),
                             border: Border.all(
                               color:
-                              _violet.withOpacity(0.2),
+                              _primary.withOpacity(0.2),
                             ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.verified_rounded,
-                                  color: _violet, size: 13),
+                                  color: _primary, size: 13),
                               const SizedBox(width: 5),
                               Text(
                                 skill.trim(),
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: _violet,
+                                  color: _primary,
                                 ),
                               ),
                             ],
@@ -374,7 +374,7 @@ class _StatCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E1B3A),
+              color: Color(0xFF0F2C59),
             ),
           ),
           const SizedBox(height: 2),
@@ -437,7 +437,7 @@ class _InfoCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E1B3A),
+                  color: Color(0xFF0F2C59),
                 ),
               ),
             ],
