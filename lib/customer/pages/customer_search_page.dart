@@ -18,6 +18,28 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
   static const _ink = Color(0xFF0F2C59);
   static const _bg = Color(0xFFF5FAFF);
 
+  // Accent colours + icons cycled across the popular-skill cards
+  static const List<Color> _skillColors = [
+    Color(0xFF0072FF), // blue
+    Color(0xFF8B5CF6), // purple
+    Color(0xFF10B981), // green
+    Color(0xFFF59E0B), // amber
+    Color(0xFFEC4899), // pink
+    Color(0xFF06B6D4), // cyan
+    Color(0xFFEF4444), // red
+    Color(0xFF6366F1), // indigo
+  ];
+  static const List<IconData> _skillIcons = [
+    Icons.handyman_rounded,
+    Icons.build_rounded,
+    Icons.electrical_services_rounded,
+    Icons.plumbing_rounded,
+    Icons.cleaning_services_rounded,
+    Icons.format_paint_rounded,
+    Icons.construction_rounded,
+    Icons.hardware_rounded,
+  ];
+
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -154,6 +176,10 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
     }
   }
 
+  // ══════════════════════════════════════════════════
+  //  UI ONLY BELOW THIS LINE
+  // ══════════════════════════════════════════════════
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -171,57 +197,136 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
   }
 
   Widget _buildSearchBar() {
+    final hasResults = _results.isNotEmpty && !_loading;
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(
-            controller: _searchController,
-            focusNode: _searchFocusNode,
-            textInputAction: TextInputAction.search,
-            onSubmitted: _search,
-            style: const TextStyle(
-                fontSize: 15, fontWeight: FontWeight.w500, color: _ink),
-            decoration: InputDecoration(
-              hintText: "Search workers by skill…",
-              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-              prefixIcon: Icon(Icons.search_rounded,
-                  color: _primary.withOpacity(0.7), size: 22),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                icon: const Icon(Icons.close_rounded,
-                    color: Colors.grey, size: 20),
-                onPressed: () {
-                  _searchController.clear();
-                  _searchFocusNode.unfocus();
-                  setState(() {
-                    _results = [];
-                    _error = null;
-                    _showAutocomplete = false;
-                  });
-                },
-              )
-                  : IconButton(
-                icon: Icon(Icons.arrow_forward_rounded,
-                    color: _primary, size: 20),
-                onPressed: () => _search(_searchController.text),
+          const Text(
+            "Find a worker",
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Container(
+                padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _lat != null
+                          ? Icons.location_on_rounded
+                          : Icons.location_off_rounded,
+                      color: Colors.white,
+                      size: 13,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _locationLoading
+                          ? "Locating you…"
+                          : _lat != null
+                          ? "Using your current location"
+                          : "Location unavailable",
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ),
-              filled: true,
-              fillColor: _bg,
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 18, vertical: 14),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: _primary, width: 1.5),
+              if (hasResults) ...[
+                const SizedBox(width: 8),
+                Text(
+                  "${_results.length} found",
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6)),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              textInputAction: TextInputAction.search,
+              onSubmitted: _search,
+              style: const TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w500, color: _ink),
+              decoration: InputDecoration(
+                hintText: "Search workers by skill…",
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                prefixIcon: Icon(Icons.search_rounded,
+                    color: _primary.withOpacity(0.8), size: 22),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.close_rounded,
+                      color: Colors.grey, size: 20),
+                  onPressed: () {
+                    _searchController.clear();
+                    _searchFocusNode.unfocus();
+                    setState(() {
+                      _results = [];
+                      _error = null;
+                      _showAutocomplete = false;
+                    });
+                  },
+                )
+                    : IconButton(
+                  icon: Icon(Icons.arrow_forward_rounded,
+                      color: _primary, size: 20),
+                  onPressed: () => _search(_searchController.text),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18, vertical: 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: const BorderSide(color: _primary, width: 1.5),
+                ),
               ),
             ),
           ),
-
           if (_showAutocomplete && _autocompleteResults.isNotEmpty)
             _AutocompleteDropdown(
               items: _autocompleteResults,
@@ -239,10 +344,11 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: _primary),
+            CircularProgressIndicator(color: _primary, strokeWidth: 3),
             SizedBox(height: 16),
             Text("Getting your location…",
-                style: TextStyle(color: Colors.grey)),
+                style: TextStyle(
+                    color: Colors.grey, fontWeight: FontWeight.w500)),
           ],
         ),
       );
@@ -256,16 +362,19 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(22),
                 decoration: const BoxDecoration(
                     color: Color(0xFFFEF2F2), shape: BoxShape.circle),
                 child: const Icon(Icons.error_outline_rounded,
-                    color: Colors.redAccent, size: 36),
+                    color: Colors.redAccent, size: 38),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               Text(_error!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.grey)),
+                  style: const TextStyle(
+                      color: _ink,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600)),
             ],
           ),
         ),
@@ -274,7 +383,7 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
 
     if (_loading) {
       return ListView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         itemCount: 5,
         itemBuilder: (_, __) => const _ShimmerCard(),
       );
@@ -290,15 +399,11 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
     }
 
     if (_results.isEmpty) {
-      return const _EmptyState(
-        icon: Icons.search_rounded,
-        title: "Find nearby workers",
-        subtitle: "Type a skill above to find available workers near you.",
-      );
+      return _buildIdleState();
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       itemCount: _results.length,
       itemBuilder: (_, i) {
         final w = _results[i];
@@ -311,6 +416,110 @@ class _CustomerSearchPageState extends State<CustomerSearchPage> {
           ),
         );
       },
+    );
+  }
+
+  // Idle state: popular skills shown as tappable cards (from _allSkills)
+  Widget _buildIdleState() {
+    final suggestions = _allSkills.take(8).toList();
+    if (suggestions.isEmpty) return const SizedBox.shrink();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("POPULAR SKILLS",
+              style: TextStyle(
+                  fontSize: 11,
+                  letterSpacing: 1,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[500])),
+          const SizedBox(height: 14),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: suggestions.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.7,
+            ),
+            itemBuilder: (_, i) {
+              final s = suggestions[i];
+              final accent = _skillColors[i % _skillColors.length];
+              final accentIcon = _skillIcons[i % _skillIcons.length];
+              return InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => _selectAutocomplete(s),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        accent.withOpacity(0.16),
+                        accent.withOpacity(0.04),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: accent.withOpacity(0.28)),
+                    boxShadow: [
+                      BoxShadow(
+                          color: accent.withOpacity(0.14),
+                          blurRadius: 14,
+                          offset: const Offset(0, 5)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    accent.withOpacity(0.75),
+                                    accent,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: accent.withOpacity(0.35),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 3)),
+                                ]),
+                            child: Icon(accentIcon,
+                                size: 18, color: Colors.white),
+                          ),
+                          Icon(Icons.north_east_rounded,
+                              size: 16, color: accent),
+                        ],
+                      ),
+                      Text(s,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: _ink)),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -335,135 +544,211 @@ class _WorkerCard extends StatelessWidget {
     final double rating =
         double.tryParse(worker['rating']?.toString() ?? '0') ?? 0;
 
+    final String skillsRaw = (worker['skills_list'] ?? '').toString();
+    final List<String> skills = skillsRaw
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFE3EEFB)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 14,
-                offset: const Offset(0, 4)),
+                color: _primary.withOpacity(0.07),
+                blurRadius: 18,
+                offset: const Offset(0, 6)),
           ],
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Stack(
+              Row(
                 children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        _initials(worker['full_name'] ?? worker['email']),
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: isOnline
-                            ? Colors.greenAccent
-                            : Colors.grey.shade400,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
+                  Stack(
+                    children: [
+                      Container(
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Center(
                           child: Text(
-                            worker['full_name'] ?? 'Worker',
+                            _initials(worker['full_name'] ?? worker['email']),
                             style: const TextStyle(
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: _ink),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                                fontSize: 19),
                           ),
                         ),
+                      ),
+                      Positioned(
+                        right: -1,
+                        bottom: -1,
+                        child: Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: isOnline
+                                ? const Color(0xFF22C55E)
+                                : Colors.grey.shade400,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2.5),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          worker['full_name'] ?? 'Worker',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                              color: _ink),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(worker['email'] ?? '',
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.grey[500]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded,
-                                color: Color(0xFFF59E0B), size: 14),
-                            const SizedBox(width: 3),
-                            Text(rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: _ink)),
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                color: isOnline
+                                    ? const Color(0xFF22C55E)
+                                    : Colors.grey.shade400,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              isOnline ? "Online now" : "Offline",
+                              style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: isOnline
+                                      ? const Color(0xFF16A34A)
+                                      : Colors.grey[500]),
+                            ),
                           ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 3),
-                    Text(worker['email'] ?? '',
-                        style: TextStyle(
-                            fontSize: 12, color: Colors.grey[500]),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 6),
-                    if (worker['skills_list'] != null &&
-                        (worker['skills_list'] as String).isNotEmpty)
-                      Text(
-                        worker['skills_list'],
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: _primary.withOpacity(0.8),
-                            fontWeight: FontWeight.w500),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    const SizedBox(height: 8),
-                    Row(
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 9, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7E6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        _Pill(
-                            icon: Icons.near_me_rounded,
-                            label: "${distance.toStringAsFixed(1)} km away",
-                            color: _primary),
-                        const SizedBox(width: 8),
-                        _Pill(
-                            icon: Icons.work_history_rounded,
-                            label:
-                            "${worker['experience_years'] ?? 0} yrs exp",
-                            color: const Color(0xFFF59E0B)),
+                        const Icon(Icons.star_rounded,
+                            color: Color(0xFFF59E0B), size: 15),
+                        const SizedBox(width: 3),
+                        Text(rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: _ink)),
                       ],
                     ),
+                  ),
+                ],
+              ),
+              if (skills.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    ...skills.take(3).map((s) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: _primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(s,
+                          style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: _primary)),
+                    )),
+                    if (skills.length > 3)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text("+${skills.length - 3}",
+                            style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.grey[600])),
+                      ),
                   ],
                 ),
+              ],
+              const SizedBox(height: 14),
+              Divider(height: 1, color: Colors.grey.shade100),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _Pill(
+                      icon: Icons.near_me_rounded,
+                      label: "${distance.toStringAsFixed(1)} km away",
+                      color: _primary),
+                  const SizedBox(width: 8),
+                  _Pill(
+                      icon: Icons.work_history_rounded,
+                      label: "${worker['experience_years'] ?? 0} yrs exp",
+                      color: const Color(0xFFF59E0B)),
+                  const Spacer(),
+                  Row(
+                    children: const [
+                      Text("View",
+                          style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: _primary)),
+                      SizedBox(width: 2),
+                      Icon(Icons.chevron_right_rounded,
+                          color: _primary, size: 20),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Icon(Icons.chevron_right_rounded,
-                  color: Colors.grey.shade300, size: 22),
             ],
           ),
         ),
@@ -490,19 +775,19 @@ class _Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: color),
+          Icon(icon, size: 12, color: color),
           const SizedBox(width: 4),
           Text(label,
               style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: color)),
         ],
       ),
@@ -530,20 +815,19 @@ class _AutocompleteDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 8),
+      margin: const EdgeInsets.only(top: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 14,
-              offset: const Offset(0, 4)),
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 18,
+              offset: const Offset(0, 6)),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Column(
           children: items.asMap().entries.map((entry) {
             final i = entry.key;
@@ -555,14 +839,14 @@ class _AutocompleteDropdown extends StatelessWidget {
                   onTap: () => onSelect(skill),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 11),
+                        horizontal: 16, vertical: 12),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                              color: _primary.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(8)),
+                              color: _primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10)),
                           child: Icon(icon, size: 14, color: _primary),
                         ),
                         const SizedBox(width: 12),
@@ -570,7 +854,7 @@ class _AutocompleteDropdown extends StatelessWidget {
                           child: Text(skill,
                               style: const TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                   color: _ink)),
                         ),
                         Icon(Icons.north_west_rounded,
@@ -623,10 +907,10 @@ class _ShimmerCardState extends State<_ShimmerCard>
     return AnimatedBuilder(
       animation: _anim,
       builder: (_, __) => Container(
-        height: 110,
-        margin: const EdgeInsets.only(bottom: 14),
+        height: 150,
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           gradient: LinearGradient(
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
